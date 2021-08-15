@@ -2634,15 +2634,15 @@ static const struct panel_desc lg_lp079qx1_sp0v = {
 };
 
 static const struct drm_display_mode lg_lp097qx1_spa1_mode = {
-	.clock = 205210,
-	.hdisplay = 2048,
-	.hsync_start = 2048 + 150,
-	.hsync_end = 2048 + 150 + 5,
-	.htotal = 2048 + 150 + 5 + 5,
-	.vdisplay = 1536,
-	.vsync_start = 1536 + 3,
-	.vsync_end = 1536 + 3 + 1,
-	.vtotal = 1536 + 3 + 1 + 9,
+	.clock = 205210,  // KHz
+	.hdisplay = 2048,  // Active
+	.hsync_start = 2048 + 150,  // Active + HFP
+	.hsync_end = 2048 + 150 + 5, // Active + HFP + Width-Active
+	.htotal = 2048 + 150 + 5 + 5, // Active + HFP + Width-Active + HBP
+	.vdisplay = 1536, // Active
+	.vsync_start = 1536 + 3, // Active + VFP
+	.vsync_end = 1536 + 3 + 1, // Active + VFP + Width-Active
+	.vtotal = 1536 + 3 + 1 + 9, // Active + VFP + Width-Active + VBP
 };
 
 static const struct panel_desc lg_lp097qx1_spa1 = {
@@ -4621,6 +4621,34 @@ static const struct panel_desc_dsi osd101t2045_53ts = {
 	.lanes = 4,
 };
 
+static const struct drm_display_mode lg_lp097x02_slq1_mode = {
+	.clock = 100030,  // KHz
+	.hdisplay = 1024,  // Active
+	.hsync_start = 1024 + 260,  // Active + HFP
+	.hsync_end = 1024 + 260 + 320, // Active + HFP + Width-Active
+	.htotal = 1024 + 260 + 320 + 480, // Active + HFP + Width-Active + HBP
+	.vdisplay = 768, // Active
+	.vsync_start = 768 + 16, // Active + VFP
+	.vsync_end = 768 + 16 + 10, // Active + VFP + Width-Active
+	.vtotal = 768 + 16 + 10 + 6, // Active + VFP + Width-Active + VBP
+};
+
+static const struct panel_desc_dsi lg_lp097x02_slq1 = {
+	.desc = {
+		.modes = &lg_lp097x02_slq1_mode,
+		.num_modes = 1,
+		.bpc = 6,
+		.size = {
+			.width = 210,
+			.height = 164,
+		},
+		.connector_type = DRM_MODE_CONNECTOR_DSI,
+	},
+	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_CLOCK_NON_CONTINUOUS,
+	.format = MIPI_DSI_FMT_RGB666,
+	.lanes = 4,
+};
+
 static const struct of_device_id dsi_of_match[] = {
 	{
 		.compatible = "auo,b080uan01",
@@ -4634,6 +4662,9 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "lg,lh500wx1-sd03",
 		.data = &lg_lh500wx1_sd03
+	}, {
+		.compatible = "lg,lp097x02-slq1",
+		.data = &lg_lp097x02_slq1
 	}, {
 		.compatible = "panasonic,vvx10f004b00",
 		.data = &panasonic_vvx10f004b00
