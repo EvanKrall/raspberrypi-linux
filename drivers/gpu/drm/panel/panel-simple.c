@@ -3984,6 +3984,7 @@ static const struct panel_desc lg_lp097x02_slq1 = {
 		.width = 210,
 		.height = 164,
 	},
+	.bus_format = MEDIA_BUS_FMT_RGB666_1X7X3_SPWG,
 	.connector_type = DRM_MODE_CONNECTOR_LVDS,
 };
 
