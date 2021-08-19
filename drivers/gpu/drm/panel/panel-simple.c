@@ -3964,6 +3964,29 @@ static const struct panel_desc arm_rtsm = {
 	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
 };
 
+static const struct drm_display_mode lg_lp097x02_slq1_mode = {
+	.clock = 100030,  // KHz
+	.hdisplay = 1024,  // Active
+	.hsync_start = 1024 + 260,  // Active + HFP
+	.hsync_end = 1024 + 260 + 320, // Active + HFP + Width-Active
+	.htotal = 1024 + 260 + 320 + 480, // Active + HFP + Width-Active + HBP
+	.vdisplay = 768, // Active
+	.vsync_start = 768 + 16, // Active + VFP
+	.vsync_end = 768 + 16 + 10, // Active + VFP + Width-Active
+	.vtotal = 768 + 16 + 10 + 6, // Active + VFP + Width-Active + VBP
+};
+
+static const struct panel_desc lg_lp097x02_slq1 = {
+	.modes = &lg_lp097x02_slq1_mode,
+	.num_modes = 1,
+	.bpc = 6,
+	.size = {
+		.width = 210,
+		.height = 164,
+	},
+	.connector_type = DRM_MODE_CONNECTOR_LVDS,
+};
+
 static const struct of_device_id platform_of_match[] = {
 	{
 		.compatible = "ampire,am-1280800n3tzqw-t00h",
@@ -4202,6 +4225,9 @@ static const struct of_device_id platform_of_match[] = {
 	}, {
 		.compatible = "lg,lp097qx1-spa1",
 		.data = &lg_lp097qx1_spa1,
+	}, {
+		.compatible = "lg,lp097x02-slq1",
+		.data = &lg_lp097x02_slq1,
 	}, {
 		.compatible = "lg,lp120up1",
 		.data = &lg_lp120up1,
@@ -4621,33 +4647,6 @@ static const struct panel_desc_dsi osd101t2045_53ts = {
 	.lanes = 4,
 };
 
-static const struct drm_display_mode lg_lp097x02_slq1_mode = {
-	.clock = 100030,  // KHz
-	.hdisplay = 1024,  // Active
-	.hsync_start = 1024 + 260,  // Active + HFP
-	.hsync_end = 1024 + 260 + 320, // Active + HFP + Width-Active
-	.htotal = 1024 + 260 + 320 + 480, // Active + HFP + Width-Active + HBP
-	.vdisplay = 768, // Active
-	.vsync_start = 768 + 16, // Active + VFP
-	.vsync_end = 768 + 16 + 10, // Active + VFP + Width-Active
-	.vtotal = 768 + 16 + 10 + 6, // Active + VFP + Width-Active + VBP
-};
-
-static const struct panel_desc_dsi lg_lp097x02_slq1 = {
-	.desc = {
-		.modes = &lg_lp097x02_slq1_mode,
-		.num_modes = 1,
-		.bpc = 6,
-		.size = {
-			.width = 210,
-			.height = 164,
-		},
-		.connector_type = DRM_MODE_CONNECTOR_DSI,
-	},
-	.flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_CLOCK_NON_CONTINUOUS,
-	.format = MIPI_DSI_FMT_RGB666,
-	.lanes = 4,
-};
 
 static const struct of_device_id dsi_of_match[] = {
 	{
@@ -4662,9 +4661,6 @@ static const struct of_device_id dsi_of_match[] = {
 	}, {
 		.compatible = "lg,lh500wx1-sd03",
 		.data = &lg_lh500wx1_sd03
-	}, {
-		.compatible = "lg,lp097x02-slq1",
-		.data = &lg_lp097x02_slq1
 	}, {
 		.compatible = "panasonic,vvx10f004b00",
 		.data = &panasonic_vvx10f004b00
