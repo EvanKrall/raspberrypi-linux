@@ -33,6 +33,18 @@
 	fragment@2 {
 		target-path = "/";
 		__overlay__ {
+			vdd_panel: fixedregulator {
+			    regulator-boot-on;
+			    compatible = "regulator-fixed";
+			    regulator-name = "lvds18";
+			    regulator-min-microvolt = <1800000>;
+			    regulator-max-microvolt = <1800000>;
+			    gpio = <&gpio 26 0>;
+			    startup-delay-us = <70000>;
+			    enable-active-high;
+			    vin-supply = <&vdd_3v3_reg>;
+			};
+
 			//#gpio-cells = <2>;
 			/* Panel backlight through PWM0 on GPIO 12 */
 			backlight_lvds: backlight {
@@ -41,11 +53,12 @@
 				brightness-levels = <0  1000>;
 				num-interpolated-steps = <1000>;
 				default-brightness-level = <800>;
-				enable-gpios = <&gpio 17 0>; /* Backlight enable... */
+				enable-gpios = <&gpio 13 0>; /* Backlight enable... */
 			};
 
 			panel: panel {
-				compatible = "chunghwa,claa070wp03xglvds", "simple-panel";
+				compatible = "lg,lp097x02-slq1";
+				power-supply = <&vdd_panel>;
 				backlight = <&backlight_lvds>;
 
 				port {
@@ -65,10 +78,10 @@
 			#size-cells = <0>;
 			status = "okay";
 
-			bridge@2c {
+			bridge@2d {
 				compatible = "ti,sn65dsi83";
-				reg = <0x2c>;
-				enable-gpios = <&gpio 4 0>;
+				reg = <0x2d>;
+				enable-gpios = <&gpio 5 0>;
 
 				ports {
 					#address-cells = <1>;
@@ -78,7 +91,7 @@
 						reg = <0>;
 						bridge_in: endpoint {
 							remote-endpoint = <&dsi_out_port>;
-							data-lanes = <0 1 2 3>;
+							data-lanes = <0 1>;
 						};
 					};
 
@@ -102,7 +115,7 @@
 			port {
 				dsi_out_port: endpoint {
 					remote-endpoint = <&bridge_in>;
-					data-lanes = <0 1 2 3>;
+					data-lanes = <0 1>;
 				};
 			};
 		};
