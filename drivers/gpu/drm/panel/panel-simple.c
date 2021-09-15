@@ -3965,7 +3965,7 @@ static const struct panel_desc arm_rtsm = {
 };
 
 static const struct drm_display_mode lg_lp097x02_slq1_mode = {
-	.clock = 100030,  // KHz
+	.clock = 100000,  // KHz
 	.hdisplay = 1024,  // Active
 	.hsync_start = 1024 + 260,  // Active + HFP
 	.hsync_end = 1024 + 260 + 320, // Active + HFP + Width-Active
