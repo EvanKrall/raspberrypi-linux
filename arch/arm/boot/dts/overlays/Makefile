@@ -263,6 +263,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	waveshare-can-fd-hat-mode-b.dtbo \
 	wittypi.dtbo \
 	wm8960-soundcard.dtbo \
+	pipad-i2s-soundcard.dtbo \
 	pipad-touchscreen.dtbo \
 	pipad-bq25895.dtbo \
 	pipad-bcm4329-cm4io.dtbo \
