@@ -1,0 +1,127 @@
+#include <dt-bindings/clock/bcm2835.h>
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2835";
+    fragment@0 {
+        target = <&gpio>;
+        __overlay__ {
+            amp_enable: amp_enable {
+                brcm,pins = <17>;
+                brcm,function = <1>;
+                brcm,pull = <1>;
+            };
+        };
+    };
+
+    fragment@1 {
+        target-path = "/";
+        __overlay__ {
+
+            vcc18: fixedregulator@2 {
+                regulator-boot-on;
+                compatible = "regulator-fixed";
+                regulator-name = "soundcard18";
+                regulator-min-microvolt = <1800000>;
+                regulator-max-microvolt = <1800000>;
+                gpio = <&gpio 22 0>;
+                startup-delay-us = <70000>;
+                enable-active-high;
+                vin-supply = <&vdd_3v3_reg>;
+            };
+
+            amp: analog-amplifier {
+                compatible = "simple-audio-amplifier";
+                enable-gpios = <&gpio 17 0>;
+                VCC-supply = <&vdd_3v3_reg>;
+            };
+        };
+    };
+
+    fragment@2 {
+        target = <&i2c1>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            tlv320aic3206: tlv320aic3206@24 {
+                // #address-cells = <1>;
+                // #size-cells = <0>;
+                status = "okay";
+                #sound-dai-cells = <0>;
+                compatible = "ti,tlv320aic32x6";
+                reg = <0x18>;
+
+                reset-gpios = <&gpio 27 0>;
+                
+                iov-supply = <&vdd_3v3_reg>;
+                ldoin-supply = <&vcc18>;
+
+                clocks = <&clocks BCM2835_CLOCK_GP0>;
+                clock-names = "mclk";
+                assigned-clocks = <&clocks BCM2835_CLOCK_GP0>;
+                assigned-clock-rates = <25000000>;
+
+                aic32x4-gpio-func = <
+                    0xff
+                    0xff
+                    0xff
+                    0xff
+                    0xff
+                >;
+            };
+        };
+    };
+
+    fragment@3 {
+        target = <&i2s>;
+        __overlay__ {
+            status = "okay";
+        };
+    };
+
+    fragment@4 {
+        target = <&sound>;
+        snd: __overlay__ {
+            compatible = "simple-audio-card";
+            i2s_controller = <&i2s>;
+            status = "okay";
+            simple-audio-card,name = "pipad";
+            simple-audio-card,format = "i2s";
+
+            simple-audio-card,bitclock-master = <&dailink0_master>;
+            simple-audio-card,frame-master = <&dailink0_master>;
+
+            simple-audio-card,widgets =
+                    "Microphone", "Microphone Jack",
+                    "Microphone", "Internal Microphone",
+                    "Headphone", "Headphone Jack",
+                    "Line", "Line Out";
+                    // todo: deal with line out / switch
+
+            simple-audio-card,routing =
+                "Line Out", "LOR",
+                "Line Out", "LOL",
+                "Headphone Jack", "HPL",
+                "Headphone Jack", "HPR",
+                "IN3_L", "Microphone Jack",
+                "IN1_L", "Internal Microphone",
+                "IN1_R", "Internal Microphone";
+
+            // simple-audio-card,aux-devs = <&amp>;
+            dailink0_master: simple-audio-card,cpu {
+                sound-dai = <&i2s>;
+            };
+            simple-audio-card,codec {
+                sound-dai = <&tlv320aic3206>;
+                system-clock-frequency = <12288000>;
+            };
+        };
+    };
+
+    __overrides__ {
+        alsaname = <&snd>, "simple-audio-card,name";
+    };
+};

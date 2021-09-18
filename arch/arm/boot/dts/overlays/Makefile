@@ -231,6 +231,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	w1-gpio-pullup.dtbo \
 	w5500.dtbo \
 	wittypi.dtbo \
+	pipad-i2s-soundcard.dtbo \
 	wm8960-soundcard.dtbo
 
 targets += dtbs dtbs_install
