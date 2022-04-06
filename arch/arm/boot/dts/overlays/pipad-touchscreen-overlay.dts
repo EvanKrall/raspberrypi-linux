@@ -1,0 +1,42 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/bcm2835.h>
+#include <dt-bindings/clock/bcm2835.h>
+
+
+/ {
+    compatible = "brcm,bcm2835";
+
+    fragment@0 {
+        target = <&gpio>;
+        __overlay__ {
+            goodix_pins: goodix_pins {
+                brcm,pins = <23 25>; // interrupt and reset
+                brcm,function = <0 0>; // in
+                brcm,pull = <2 2>; // pull-up
+            };
+        };
+    };
+
+    fragment@1 {
+        target = <&i2c1>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            status = "okay";
+
+            gt9110@5d {
+                compatible = "goodix,gt9110";
+                reg = <0x5d>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&goodix_pins>;
+                interrupt-parent = <&gpio>;
+                interrupts = <4 2>; // high-to-low edge triggered
+                irq-gpios = <&gpio 25 0>;
+                reset-gpios = <&gpio 23 1>;
+            };
+        };
+    };
+};
