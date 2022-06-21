@@ -117,9 +117,9 @@ struct goodix_ts_data {
 	unsigned short keymap[GOODIX_MAX_KEYS];
 };
 
-static int goodix_check_cfg_8(struct goodix_ts_data *ts,
+int goodix_check_cfg_8(struct goodix_ts_data *ts,
 			      const u8 *cfg, int len);
-static int goodix_check_cfg_16(struct goodix_ts_data *ts,
+int goodix_check_cfg_16(struct goodix_ts_data *ts,
 			       const u8 *cfg, int len);
 static void goodix_calc_cfg_checksum_8(struct goodix_ts_data *ts);
 static void goodix_calc_cfg_checksum_16(struct goodix_ts_data *ts);
@@ -216,7 +216,7 @@ static const struct dmi_system_id inverted_x_screen[] = {
  * @buf: raw write data buffer.
  * @len: length of the buffer to write
  */
-static int goodix_i2c_read(struct i2c_client *client,
+int goodix_i2c_read(struct i2c_client *client,
 			   u16 reg, u8 *buf, int len)
 {
 	struct i2c_msg msgs[2];
@@ -245,7 +245,7 @@ static int goodix_i2c_read(struct i2c_client *client,
  * @buf: raw data buffer to write.
  * @len: length of the buffer to write
  */
-static int goodix_i2c_write(struct i2c_client *client, u16 reg, const u8 *buf,
+int goodix_i2c_write(struct i2c_client *client, u16 reg, const u8 *buf,
 			    unsigned len)
 {
 	u8 *addr_buf;
@@ -270,7 +270,7 @@ static int goodix_i2c_write(struct i2c_client *client, u16 reg, const u8 *buf,
 	return ret < 0 ? ret : (ret != 1 ? -EIO : 0);
 }
 
-static int goodix_i2c_write_u8(struct i2c_client *client, u16 reg, u8 value)
+int goodix_i2c_write_u8(struct i2c_client *client, u16 reg, u8 value)
 {
 	return goodix_i2c_write(client, reg, &value, sizeof(value));
 }
@@ -287,7 +287,7 @@ static const struct goodix_chip_data *goodix_get_chip_data(const char *id)
 	return &gt9x_chip_data;
 }
 
-static int goodix_ts_read_input_report(struct goodix_ts_data *ts, u8 *data)
+int goodix_ts_read_input_report(struct goodix_ts_data *ts, u8 *data)
 {
 	unsigned long max_timeout;
 	int touch_num;
@@ -448,14 +448,14 @@ static void goodix_free_irq(struct goodix_ts_data *ts)
 	devm_free_irq(&ts->client->dev, ts->client->irq, ts);
 }
 
-static int goodix_request_irq(struct goodix_ts_data *ts)
+int goodix_request_irq(struct goodix_ts_data *ts)
 {
 	return devm_request_threaded_irq(&ts->client->dev, ts->client->irq,
 					 NULL, goodix_ts_irq_handler,
 					 ts->irq_flags, ts->client->name, ts);
 }
 
-static int goodix_check_cfg_8(struct goodix_ts_data *ts, const u8 *cfg, int len)
+int goodix_check_cfg_8(struct goodix_ts_data *ts, const u8 *cfg, int len)
 {
 	int i, raw_cfg_len = len - 2;
 	u8 check_sum = 0;
@@ -491,7 +491,7 @@ static void goodix_calc_cfg_checksum_8(struct goodix_ts_data *ts)
 	ts->config[raw_cfg_len + 1] = 1; /* Set "config_fresh" bit */
 }
 
-static int goodix_check_cfg_16(struct goodix_ts_data *ts, const u8 *cfg,
+int goodix_check_cfg_16(struct goodix_ts_data *ts, const u8 *cfg,
 			       int len)
 {
 	int i, raw_cfg_len = len - 3;
@@ -535,7 +535,7 @@ static void goodix_calc_cfg_checksum_16(struct goodix_ts_data *ts)
  * @cfg: firmware config data
  * @len: config data length
  */
-static int goodix_check_cfg(struct goodix_ts_data *ts, const u8 *cfg, int len)
+int goodix_check_cfg(struct goodix_ts_data *ts, const u8 *cfg, int len)
 {
 	if (len < GOODIX_CONFIG_MIN_LENGTH ||
 	    len > GOODIX_CONFIG_MAX_LENGTH) {
@@ -554,7 +554,7 @@ static int goodix_check_cfg(struct goodix_ts_data *ts, const u8 *cfg, int len)
  * @cfg: config firmware to write to device
  * @len: config data length
  */
-static int goodix_send_cfg(struct goodix_ts_data *ts, const u8 *cfg, int len)
+int goodix_send_cfg(struct goodix_ts_data *ts, const u8 *cfg, int len)
 {
 	int error;
 
@@ -577,7 +577,7 @@ static int goodix_send_cfg(struct goodix_ts_data *ts, const u8 *cfg, int len)
 }
 
 #ifdef ACPI_GPIO_SUPPORT
-static int goodix_pin_acpi_direction_input(struct goodix_ts_data *ts)
+int goodix_pin_acpi_direction_input(struct goodix_ts_data *ts)
 {
 	acpi_handle handle = ACPI_HANDLE(&ts->client->dev);
 	acpi_status status;
@@ -586,7 +586,7 @@ static int goodix_pin_acpi_direction_input(struct goodix_ts_data *ts)
 	return ACPI_SUCCESS(status) ? 0 : -EIO;
 }
 
-static int goodix_pin_acpi_output_method(struct goodix_ts_data *ts, int value)
+int goodix_pin_acpi_output_method(struct goodix_ts_data *ts, int value)
 {
 	acpi_handle handle = ACPI_HANDLE(&ts->client->dev);
 	acpi_status status;
@@ -595,14 +595,14 @@ static int goodix_pin_acpi_output_method(struct goodix_ts_data *ts, int value)
 	return ACPI_SUCCESS(status) ? 0 : -EIO;
 }
 #else
-static int goodix_pin_acpi_direction_input(struct goodix_ts_data *ts)
+int goodix_pin_acpi_direction_input(struct goodix_ts_data *ts)
 {
 	dev_err(&ts->client->dev,
 		"%s called on device without ACPI support\n", __func__);
 	return -EINVAL;
 }
 
-static int goodix_pin_acpi_output_method(struct goodix_ts_data *ts, int value)
+int goodix_pin_acpi_output_method(struct goodix_ts_data *ts, int value)
 {
 	dev_err(&ts->client->dev,
 		"%s called on device without ACPI support\n", __func__);
@@ -610,7 +610,7 @@ static int goodix_pin_acpi_output_method(struct goodix_ts_data *ts, int value)
 }
 #endif
 
-static int goodix_irq_direction_output(struct goodix_ts_data *ts, int value)
+int goodix_irq_direction_output(struct goodix_ts_data *ts, int value)
 {
 	switch (ts->irq_pin_access_method) {
 	case IRQ_PIN_ACCESS_NONE:
@@ -633,7 +633,7 @@ static int goodix_irq_direction_output(struct goodix_ts_data *ts, int value)
 	return -EINVAL; /* Never reached */
 }
 
-static int goodix_irq_direction_input(struct goodix_ts_data *ts)
+int goodix_irq_direction_input(struct goodix_ts_data *ts)
 {
 	switch (ts->irq_pin_access_method) {
 	case IRQ_PIN_ACCESS_NONE:
@@ -652,7 +652,7 @@ static int goodix_irq_direction_input(struct goodix_ts_data *ts)
 	return -EINVAL; /* Never reached */
 }
 
-static int goodix_int_sync(struct goodix_ts_data *ts)
+int goodix_int_sync(struct goodix_ts_data *ts)
 {
 	int error;
 
@@ -674,7 +674,7 @@ static int goodix_int_sync(struct goodix_ts_data *ts)
  *
  * @ts: goodix_ts_data pointer
  */
-static int goodix_reset(struct goodix_ts_data *ts)
+int goodix_reset(struct goodix_ts_data *ts)
 {
 	int error;
 
@@ -746,7 +746,7 @@ static const struct acpi_gpio_mapping acpi_goodix_reset_only_gpios[] = {
 	{ },
 };
 
-static int goodix_resource(struct acpi_resource *ares, void *data)
+int goodix_resource(struct acpi_resource *ares, void *data)
 {
 	struct goodix_ts_data *ts = data;
 	struct device *dev = &ts->client->dev;
@@ -779,7 +779,7 @@ static int goodix_resource(struct acpi_resource *ares, void *data)
  * In that case we add our own mapping and then goodix_get_gpio_config()
  * retries to get the GPIOs based on the added mapping.
  */
-static int goodix_add_acpi_gpio_mappings(struct goodix_ts_data *ts)
+int goodix_add_acpi_gpio_mappings(struct goodix_ts_data *ts)
 {
 	const struct acpi_gpio_mapping *gpio_mapping = NULL;
 	struct device *dev = &ts->client->dev;
@@ -822,7 +822,7 @@ static int goodix_add_acpi_gpio_mappings(struct goodix_ts_data *ts)
 	return devm_acpi_dev_add_driver_gpios(dev, gpio_mapping);
 }
 #else
-static int goodix_add_acpi_gpio_mappings(struct goodix_ts_data *ts)
+int goodix_add_acpi_gpio_mappings(struct goodix_ts_data *ts)
 {
 	return -EINVAL;
 }
@@ -833,7 +833,7 @@ static int goodix_add_acpi_gpio_mappings(struct goodix_ts_data *ts)
  *
  * @ts: goodix_ts_data pointer
  */
-static int goodix_get_gpio_config(struct goodix_ts_data *ts)
+int goodix_get_gpio_config(struct goodix_ts_data *ts)
 {
 	int error;
 	struct device *dev;
@@ -960,7 +960,7 @@ static void goodix_read_config(struct goodix_ts_data *ts)
  *
  * @ts: our goodix_ts_data pointer
  */
-static int goodix_read_version(struct goodix_ts_data *ts)
+int goodix_read_version(struct goodix_ts_data *ts)
 {
 	int error;
 	u8 buf[6];
@@ -989,7 +989,7 @@ static int goodix_read_version(struct goodix_ts_data *ts)
  *
  * @client: the i2c client
  */
-static int goodix_i2c_test(struct i2c_client *client)
+int goodix_i2c_test(struct i2c_client *client)
 {
 	int retry = 0;
 	int error;
@@ -1019,7 +1019,7 @@ static int goodix_i2c_test(struct i2c_client *client)
  * declare gpio pins and devices that do not. It is either called
  * directly from probe or from request_firmware_wait callback.
  */
-static int goodix_configure_dev(struct goodix_ts_data *ts)
+int goodix_configure_dev(struct goodix_ts_data *ts)
 {
 	int error;
 	int i;
@@ -1153,7 +1153,7 @@ static void goodix_disable_regulators(void *arg)
 	regulator_disable(ts->avdd28);
 }
 
-static int goodix_ts_probe(struct i2c_client *client,
+int goodix_ts_probe(struct i2c_client *client,
 			   const struct i2c_device_id *id)
 {
 	struct goodix_ts_data *ts;
@@ -1259,7 +1259,7 @@ reset:
 	return 0;
 }
 
-static int goodix_ts_remove(struct i2c_client *client)
+int goodix_ts_remove(struct i2c_client *client)
 {
 	struct goodix_ts_data *ts = i2c_get_clientdata(client);
 
