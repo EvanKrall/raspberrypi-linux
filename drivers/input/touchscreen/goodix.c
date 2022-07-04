@@ -252,6 +252,11 @@ int goodix_i2c_write(struct i2c_client *client, u16 reg, const u8 *buf,
 	struct i2c_msg msg;
 	int ret;
 
+	dev_dbg(&client->dev, "writing buffer of length %d to register %x", len, reg);
+	if (len == 1) {
+		dev_dbg(&client->dev, "buffer contents: %x", *buf);
+	}
+
 	addr_buf = kmalloc(len + 2, GFP_KERNEL);
 	if (!addr_buf)
 		return -ENOMEM;
@@ -465,7 +470,7 @@ int goodix_check_cfg_8(struct goodix_ts_data *ts, const u8 *cfg, int len)
 	check_sum = (~check_sum) + 1;
 	if (check_sum != cfg[raw_cfg_len]) {
 		dev_err(&ts->client->dev,
-			"The checksum of the config fw is not correct");
+			"The checksum of the config fw is not correct, was %02x, I calculated %02x", cfg[raw_cfg_len], check_sum);
 		return -EINVAL;
 	}
 
@@ -557,6 +562,8 @@ int goodix_check_cfg(struct goodix_ts_data *ts, const u8 *cfg, int len)
 int goodix_send_cfg(struct goodix_ts_data *ts, const u8 *cfg, int len)
 {
 	int error;
+
+	dev_dbg(&ts->client->dev, "goodix_send_cfg called with config of length %d", len);
 
 	error = goodix_check_cfg(ts, cfg, len);
 	if (error)
@@ -910,7 +917,9 @@ retry_get_irq_gpio:
 			ts->irq_pin_access_method = IRQ_PIN_ACCESS_NONE;
 		break;
 	default:
+		dev_dbg(dev, "oogabooga");
 		if (ts->gpiod_int && ts->gpiod_rst) {
+			dev_dbg(dev, "fooga wooga");
 			ts->reset_controller_at_probe = true;
 			ts->load_cfg_from_disk = true;
 			ts->irq_pin_access_method = IRQ_PIN_ACCESS_GPIO;
@@ -1023,6 +1032,7 @@ int goodix_configure_dev(struct goodix_ts_data *ts)
 {
 	int error;
 	int i;
+	dev_dbg(&ts->client->dev, "goodix_configure_dev called");
 
 	ts->int_trigger_type = GOODIX_INT_TRIGGER;
 	ts->max_touch_num = GOODIX_MAX_CONTACTS;
@@ -1114,6 +1124,7 @@ int goodix_configure_dev(struct goodix_ts_data *ts)
 		return error;
 	}
 
+	dev_dbg(&ts->client->dev, "finished goodix_configure_dev");
 	return 0;
 }
 
@@ -1131,6 +1142,8 @@ static void goodix_config_cb(const struct firmware *cfg, void *ctx)
 	struct goodix_ts_data *ts = ctx;
 	int error;
 
+	dev_dbg(&ts->client->dev, "goodix_config_cb called");
+
 	if (cfg) {
 		/* send device configuration to the firmware */
 		error = goodix_send_cfg(ts, cfg->data, cfg->size);
@@ -1139,6 +1152,7 @@ static void goodix_config_cb(const struct firmware *cfg, void *ctx)
 	}
 
 	goodix_configure_dev(ts);
+	dev_dbg(&ts->client->dev, "goodix_config_cb finished");
 
 err_release_cfg:
 	release_firmware(cfg);
@@ -1233,6 +1247,7 @@ reset:
 	ts->chip = goodix_get_chip_data(ts->id);
 
 	if (ts->load_cfg_from_disk) {
+		dev_dbg(&client->dev, "loading firmware from disk");
 		/* update device config */
 		ts->cfg_name = devm_kasprintf(&client->dev, GFP_KERNEL,
 					      "goodix_%s_cfg.bin", ts->id);
@@ -1251,6 +1266,8 @@ reset:
 
 		return 0;
 	} else {
+		dev_dbg(&client->dev, "not loading firmware from disk, just configuring dev.");
+
 		error = goodix_configure_dev(ts);
 		if (error)
 			return error;
