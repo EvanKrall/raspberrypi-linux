@@ -250,6 +250,7 @@ static int try_to_bring_up_master(struct master *master,
 		return -ENOMEM;
 
 	/* Found all components */
+	dev_dbg(master->parent, "calling master->ops->bind (ops %ps)\n", master->ops);
 	ret = master->ops->bind(master->parent);
 	if (ret < 0) {
 		devres_release_group(master->parent, NULL);

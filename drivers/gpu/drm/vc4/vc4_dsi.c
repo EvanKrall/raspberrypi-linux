@@ -1346,6 +1346,7 @@ static int vc4_dsi_host_attach(struct mipi_dsi_host *host,
 {
 	struct vc4_dsi *dsi = host_to_dsi(host);
 	int ret;
+    dev_err(&dsi->pdev->dev, "vc4_dsi_host_attach called");
 
 	dsi->lanes = device->lanes;
 	dsi->channel = device->channel;
@@ -1384,6 +1385,7 @@ static int vc4_dsi_host_attach(struct mipi_dsi_host *host,
 
 	ret = component_add(&dsi->pdev->dev, &vc4_dsi_ops);
 	if (ret) {
+        dev_err(&dsi->pdev->dev, "vc4_dsi_host_attach got error from component_add\n");
 		drm_bridge_remove(&dsi->bridge);
 		return ret;
 	}

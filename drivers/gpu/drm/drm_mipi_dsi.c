@@ -367,12 +367,17 @@ EXPORT_SYMBOL(mipi_dsi_host_unregister);
  */
 int mipi_dsi_attach(struct mipi_dsi_device *dsi)
 {
+	int ret;
 	const struct mipi_dsi_host_ops *ops = dsi->host->ops;
 
 	if (!ops || !ops->attach)
 		return -ENOSYS;
 
-	return ops->attach(dsi->host, dsi);
+	pr_debug("mipi_dsi_attach calling ops->attach");
+	ret = ops->attach(dsi->host, dsi);
+	pr_debug("mipi_dsi_attach returning %d", ret);
+	return ret;
+
 }
 EXPORT_SYMBOL(mipi_dsi_attach);
 

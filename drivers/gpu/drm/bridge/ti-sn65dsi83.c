@@ -339,6 +339,7 @@ static void sn65dsi83_atomic_pre_enable(struct drm_bridge *bridge,
 	u16 val;
 	int ret;
 
+	dev_dbg(ctx->dev, "sn65dsi83_atomic_pre_enable called");
 	ret = regulator_enable(ctx->vcc);
 	if (ret) {
 		dev_err(ctx->dev, "Failed to enable vcc: %d\n", ret);
