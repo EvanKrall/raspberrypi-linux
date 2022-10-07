@@ -304,21 +304,35 @@ static u8 sn65dsi83_get_dsi_range(struct sn65dsi83 *ctx,
 	 *  DSI_CLK = mode clock * bpp / dsi_data_lanes / 2
 	 * the 2 is there because the bus is DDR.
 	 */
-	return DIV_ROUND_UP(clamp((unsigned int)mode->clock *
+	u8 ret;
+	dev_dbg(ctx->dev, "mode->clock is %d", mode->clock);
+	dev_dbg(ctx->dev, "bpp is %d", mipi_dsi_pixel_format_to_bpp(ctx->dsi->format));
+	dev_dbg(ctx->dev, "ctx->dsi_lanes is %d", ctx->dsi_lanes);
+	dev_dbg(ctx->dev, "dsi clock seems to be %d", mode->clock *
+			    mipi_dsi_pixel_format_to_bpp(ctx->dsi->format) /
+			    ctx->dsi_lanes / 2);
+	ret = DIV_ROUND_UP(clamp((unsigned int)mode->clock *
 			    mipi_dsi_pixel_format_to_bpp(ctx->dsi->format) /
 			    ctx->dsi_lanes / 2, 40000U, 500000U), 5000U);
+	dev_dbg(ctx->dev, "dsi range is %d", ret);
+	return ret;
 }
 
 static u8 sn65dsi83_get_dsi_div(struct sn65dsi83 *ctx)
 {
 	/* The divider is (DSI_CLK / LVDS_CLK) - 1, which really is: */
 	unsigned int dsi_div = mipi_dsi_pixel_format_to_bpp(ctx->dsi->format);
+	dev_dbg(ctx->dev, "bpp is %d", dsi_div);
 
 	dsi_div /= ctx->dsi_lanes;
+	dev_dbg(ctx->dev, "after dividing by lanes (%d), = %d", ctx->dsi_lanes, dsi_div);
 
-	if (!ctx->lvds_dual_link)
+	if (!ctx->lvds_dual_link) {
 		dsi_div /= 2;
+		dev_dbg(ctx->dev, "not dual link, dividing by two: %d", dsi_div);
+	}
 
+	dev_dbg(ctx->dev, "minus one: %d", dsi_div - 1);
 	return dsi_div - 1;
 }
 
@@ -355,18 +369,22 @@ static void sn65dsi83_atomic_pre_enable(struct drm_bridge *bridge,
 
 	switch (bridge_state->output_bus_cfg.format) {
 	case MEDIA_BUS_FMT_RGB666_1X7X3_SPWG:
+		dev_dbg(ctx->dev, "output_bus_cfg.format = MEDIA_BUS_FMT_RGB666_1X7X3_SPWG");
 		lvds_format_24bpp = false;
 		lvds_format_jeida = true;
 		break;
 	case MEDIA_BUS_FMT_RGB888_1X7X4_JEIDA:
+		dev_dbg(ctx->dev, "output_bus_cfg.format = MEDIA_BUS_FMT_RGB888_1X7X4_JEIDA");
 		lvds_format_24bpp = true;
 		lvds_format_jeida = true;
 		break;
 	case MEDIA_BUS_FMT_RGB888_1X7X4_SPWG:
+		dev_dbg(ctx->dev, "output_bus_cfg.format = MEDIA_BUS_FMT_RGB888_1X7X4_SPWG");
 		lvds_format_24bpp = true;
 		lvds_format_jeida = false;
 		break;
 	default:
+		dev_dbg(ctx->dev, "output_bus_cfg.format = default, %d", bridge_state->output_bus_cfg.format);
 		/*
 		 * Some bridges still don't set the correct
 		 * LVDS bus pixel format, use SPWG24 default
@@ -420,6 +438,7 @@ static void sn65dsi83_atomic_pre_enable(struct drm_bridge *bridge,
 
 	/* Set up bits-per-pixel, 18bpp or 24bpp. */
 	if (lvds_format_24bpp) {
+		dev_dbg(ctx->dev, "setting REG_LVDS_FMT_CHA_24BPP_MODE");
 		val |= REG_LVDS_FMT_CHA_24BPP_MODE;
 		if (ctx->lvds_dual_link)
 			val |= REG_LVDS_FMT_CHB_24BPP_MODE;

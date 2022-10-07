@@ -4572,21 +4572,23 @@ static const struct panel_desc arm_rtsm = {
 	.bus_format = MEDIA_BUS_FMT_RGB888_1X24,
 };
 
-static const struct drm_display_mode lg_lp097x02_slq1_mode = {
-	.clock = 100000,  // KHz
-	.hdisplay = 1024,  // Active
-	.hsync_start = 1024 + 260,  // Active + HFP
-	.hsync_end = 1024 + 260 + 320, // Active + HFP + Width-Active
-	.htotal = 1024 + 260 + 320 + 480, // Active + HFP + Width-Active + HBP
-	.vdisplay = 768, // Active
-	.vsync_start = 768 + 16, // Active + VFP
-	.vsync_end = 768 + 16 + 10, // Active + VFP + Width-Active
-	.vtotal = 768 + 16 + 10 + 6, // Active + VFP + Width-Active + VBP
+static const struct display_timing lg_lp097x02_slq1_timing = {
+	.pixelclock = { 65000000, 65000000, 65000000 },
+	.hactive = { 1024, 1024, 1024 },
+	.hfront_porch = { 120, 120, 120 },
+	.hback_porch = { 220, 220, 220 },
+	.hsync_len =  { 200, 200, 200 },
+
+	.vactive = { 768, 768, 768 },
+	.vfront_porch = { 7, 7, 7 },
+	.vback_porch = { 21, 21, 21 },
+	.vsync_len = { 10, 10, 10 },
+	.flags = DISPLAY_FLAGS_DE_HIGH,
 };
 
 static const struct panel_desc lg_lp097x02_slq1 = {
-	.modes = &lg_lp097x02_slq1_mode,
-	.num_modes = 1,
+	.timings = &hannstar_hsd100pxn1_timing,
+	.num_timings = 1,
 	.bpc = 6,
 	.size = {
 		.width = 210,
@@ -4594,6 +4596,7 @@ static const struct panel_desc lg_lp097x02_slq1 = {
 	},
 	.bus_format = MEDIA_BUS_FMT_RGB666_1X7X3_SPWG,
 	.connector_type = DRM_MODE_CONNECTOR_LVDS,
+	// .bus_flags = DRM_BUS_FLAG_DE_HIGH,
 };
 
 static const struct of_device_id platform_of_match[] = {

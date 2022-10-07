@@ -847,6 +847,11 @@ static bool vc4_dsi_bridge_mode_fixup(struct drm_bridge *bridge,
 	unsigned long pll_clock = pixel_clock_hz * dsi->divider;
 	int divider;
 
+
+    dev_dbg(&dsi->pdev->dev, "parent_rate %ld", parent_rate);
+    dev_dbg(&dsi->pdev->dev, "pixel_clock_hz %ld", pixel_clock_hz);
+    dev_dbg(&dsi->pdev->dev, "pll_clock %ld", pll_clock);
+
 	/* Find what divider gets us a faster clock than the requested
 	 * pixel clock.
 	 */
@@ -854,20 +859,29 @@ static bool vc4_dsi_bridge_mode_fixup(struct drm_bridge *bridge,
 		if (parent_rate / (divider + 1) < pll_clock)
 			break;
 	}
+    dev_dbg(&dsi->pdev->dev, "divider %d", divider);
 
 	/* Now that we've picked a PLL divider, calculate back to its
 	 * pixel clock.
 	 */
 	pll_clock = parent_rate / divider;
+    dev_dbg(&dsi->pdev->dev, "new pll_clock %ld", pll_clock);
 	pixel_clock_hz = pll_clock / dsi->divider;
+    dev_dbg(&dsi->pdev->dev, "new pixel_clock_hz %ld", pixel_clock_hz);
 
 	adjusted_mode->clock = pixel_clock_hz / 1000;
+    dev_dbg(&dsi->pdev->dev, "adjusted_mode->clock %d", adjusted_mode->clock);
 
+    dev_dbg(&dsi->pdev->dev, "mode->htotal %d", mode->htotal);
+    dev_dbg(&dsi->pdev->dev, "mode->clock %d", mode->clock);
 	/* Given the new pixel clock, adjust HFP to keep vrefresh the same. */
 	adjusted_mode->htotal = adjusted_mode->clock * mode->htotal /
 				mode->clock;
+    dev_dbg(&dsi->pdev->dev, "adjusted_mode->htotal %d", adjusted_mode->htotal);
 	adjusted_mode->hsync_end += adjusted_mode->htotal - mode->htotal;
+    dev_dbg(&dsi->pdev->dev, "adjusted_mode->hsync_end %d", adjusted_mode->hsync_end);
 	adjusted_mode->hsync_start += adjusted_mode->htotal - mode->htotal;
+    dev_dbg(&dsi->pdev->dev, "adjusted_mode->hsync_start %d", adjusted_mode->hsync_start);
 
 	return true;
 }
@@ -914,13 +928,16 @@ static void vc4_dsi_bridge_pre_enable(struct drm_bridge *bridge,
 	crtc_state = drm_atomic_get_new_crtc_state(state, crtc);
 	mode = &crtc_state->adjusted_mode;
 
+    dev_dbg(&dsi->pdev->dev, "mode->clock: %d", mode->clock);
 	pixel_clock_hz = mode->clock * 1000;
+    dev_dbg(&dsi->pdev->dev, "pixel_clock_hz: %ld", pixel_clock_hz);
 
 	/* Round up the clk_set_rate() request slightly, since
 	 * PLLD_DSI1 is an integer divider and its rate selection will
 	 * never round up.
 	 */
 	phy_clock = (pixel_clock_hz + 1000) * dsi->divider;
+    dev_dbg(&dsi->pdev->dev, "phy_clock: %ld", phy_clock);
 	ret = clk_set_rate(dsi->pll_phy_clock, phy_clock);
 	if (ret) {
 		dev_err(&dsi->pdev->dev,
@@ -1080,6 +1097,8 @@ static void vc4_dsi_bridge_pre_enable(struct drm_bridge *bridge,
 	DSI_PORT_WRITE(HS_DLT7,
 		       VC4_SET_FIELD(dsi_esc_timing(1000000),
 				     DSI_HS_DLT7_LP_WUP));
+
+    dev_dbg(dev, "dsi->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS: %lx", (dsi->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS));
 
 	DSI_PORT_WRITE(PHYC,
 		       DSI_PHYC_DLANE0_ENABLE |
