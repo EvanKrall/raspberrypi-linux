@@ -16,7 +16,7 @@ def main():
         coordinates = {}
         oldcoordinateses = []
         slot = None
-        with subprocess.Popen("evtest /dev/input/event3", shell=True, stdout=subprocess.PIPE, bufsize=1) as subproc:
+        with subprocess.Popen("evtest /dev/input/event1", shell=True, stdout=subprocess.PIPE, bufsize=1) as subproc:
             for line in subproc.stdout:
                 words = line.split()
                 if len(words) < 11:

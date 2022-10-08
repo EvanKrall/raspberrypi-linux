@@ -50,6 +50,9 @@ Things to try:
                 reset-gpios = <&gpio 11 GPIO_ACTIVE_HIGH>;
                 touchscreen-size-x = <768>;
                 touchscreen-size-y = <1024>;
+
+                touchscreen-inverted-y;
+                touchscreen-swapped-x-y;
             };
         };
     };
