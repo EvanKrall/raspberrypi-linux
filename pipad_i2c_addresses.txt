@@ -4,6 +4,6 @@
 
 0x51 rv-8263-c7    RTC
 0x5d gt9110        touchscreen controller
-0x58 tps61177a     backlight controller
+0x2c tps61177a     backlight controller (0x58/0x59??)
 
 0x6a bq25895       battery charger
