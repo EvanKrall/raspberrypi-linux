@@ -264,6 +264,7 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	wittypi.dtbo \
 	wm8960-soundcard.dtbo \
 	pipad-touchscreen.dtbo \
+	pipad-bq25895.dtbo \
 	pipad-rtc.dtbo
 
 targets += dtbs dtbs_install
