@@ -425,6 +425,13 @@ config BACKLIGHT_TPS65217
 	  If you have a Texas Instruments TPS65217 say Y to enable the
 	  backlight driver.
 
+config BACKLIGHT_TPS61177A
+	tristate "TPS61177A Backlight"
+	depends on I2C
+	help
+	  If you have a Texas Instruments TPS61177A say Y to enable the
+	  backlight driver.
+
 config BACKLIGHT_AS3711
 	tristate "AS3711 Backlight"
 	depends on MFD_AS3711

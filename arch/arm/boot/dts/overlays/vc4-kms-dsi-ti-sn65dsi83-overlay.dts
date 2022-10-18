@@ -78,6 +78,12 @@
 			#size-cells = <0>;
 			status = "okay";
 
+			tps61177a@2c {
+				compatible = "ti,tps61177a";
+				reg = <0x2c>;
+				enable-gpios = <&gpio 6 0>;
+			};
+
 			bridge@2d {
 				compatible = "ti,sn65dsi83";
 				reg = <0x2d>;
