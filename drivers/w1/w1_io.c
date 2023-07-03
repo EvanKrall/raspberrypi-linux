@@ -12,7 +12,7 @@
 #include "w1_internal.h"
 
 static int w1_delay_parm = 1;
-module_param_named(delay_coef, w1_delay_parm, int, 0);
+module_param_named(delay_coef, w1_delay_parm, int, 0644);
 
 static int w1_disable_irqs = 0;
 module_param_named(disable_irqs, w1_disable_irqs, int, 0);
@@ -133,6 +133,7 @@ static void w1_post_write(struct w1_master *dev)
  */
 void w1_write_8(struct w1_master *dev, u8 byte)
 {
+	printk("w1_write_8 %02x", byte);
 	int i;
 
 	if (dev->bus_master->write_byte) {

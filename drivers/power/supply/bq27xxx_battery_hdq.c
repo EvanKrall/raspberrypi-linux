@@ -28,12 +28,19 @@ MODULE_PARM_DESC(F_ID, "1-wire slave FID for BQ27xxx device");
 static int w1_bq27000_read(struct w1_slave *sl, unsigned int reg)
 {
 	u8 val;
+	unsigned long flags;
 
 	mutex_lock(&sl->master->bus_mutex);
+	local_irq_save(flags);
+
 	w1_write_8(sl->master, HDQ_CMD_READ | reg);
 	val = w1_read_8(sl->master);
+
+	local_irq_restore(flags);
 	mutex_unlock(&sl->master->bus_mutex);
 
+
+	printk("w1_bq27000_read reg %02x = %02x", reg, val);
 	return val;
 }
 
@@ -83,8 +90,8 @@ static int bq27xxx_battery_hdq_add_slave(struct w1_slave *sl)
 	dev_set_drvdata(&sl->dev, di);
 
 	di->dev = &sl->dev;
-	di->chip = BQ27000;
-	di->name = "bq27000-battery";
+	di->chip = BQ27541;
+	di->name = "bq27541-battery";
 	di->bus.read = bq27xxx_battery_hdq_read;
 
 	return bq27xxx_battery_setup(di);

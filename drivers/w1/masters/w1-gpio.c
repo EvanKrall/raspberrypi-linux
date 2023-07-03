@@ -58,6 +58,81 @@ static u8 w1_gpio_read_bit(void *data)
 	return gpiod_get_value(pdata->gpiod) ? 1 : 0;
 }
 
+
+static u8 w1_gpio_touch_bit(void *data, u8 bit)
+{
+	unsigned long flags = 0;
+
+	int t_cych = 260;
+	int t_hw1 = 50;
+	int t_hw0 = 130;
+
+	local_irq_save(flags);
+
+	if (bit) {
+		w1_gpio_write_bit(data, 0);
+		udelay(t_hw1);
+		w1_gpio_write_bit(data, 1);
+		udelay(t_cych - t_hw1);
+	} else {
+		w1_gpio_write_bit(data, 0);
+		udelay(t_hw0);
+		w1_gpio_write_bit(data, 1);
+		udelay(t_cych - t_hw0);
+	}
+
+	local_irq_restore(flags);
+	return 0;
+}
+
+static u8 w1_gpio_read_byte(void *data)
+{
+	unsigned long flags = 0;
+
+	int i;
+	int j;
+	u8 res = 0;
+	int usecs_to_sleep = 10;
+
+	struct w1_gpio_platform_data *pdata = data;
+
+	/* sample timing is critical here */
+	local_irq_save(flags);
+
+	for (i = 0; i < 8; ++i) {
+		// wait for low transition up to 950us
+		gpiod_set_value(pdata->debug_gpiod, 1);
+		for (j = 0; j < 950 && w1_gpio_read_bit(data); j += usecs_to_sleep) {
+			udelay(usecs_to_sleep);
+		}
+		gpiod_set_value(pdata->debug_gpiod, 0);
+
+		// sleep until midway through the bit.
+		// per bq27541 datasheet, t_(DW1) is 32-50us, t_(DW0) is 80-145us, so we want to look between 50 and 80us.
+		udelay(65);
+		gpiod_set_value(pdata->debug_gpiod, 1);
+
+		res |= (w1_gpio_read_bit(data) << i);
+
+		// wait for high transition up to 950us (probably overkill)
+		for (j = 0; j < 950 && !w1_gpio_read_bit(data); j += usecs_to_sleep) {
+			udelay(usecs_to_sleep);
+		}
+		gpiod_set_value(pdata->debug_gpiod, 0);
+
+		if (!w1_gpio_read_bit(data)) {
+			printk("error: no high transition within 950us on bit %d", i);
+			break;
+		}
+
+	}
+
+	local_irq_restore(flags);
+
+	printk("w1-gpio read byte 0x%02x\n", res);
+	return res;
+}
+
 #if defined(CONFIG_OF)
 static const struct of_device_id w1_gpio_dt_ids[] = {
 	{ .compatible = "w1-gpio" },
@@ -120,10 +195,21 @@ static int w1_gpio_probe(struct platform_device *pdev)
 		return PTR_ERR(pdata->pullup_gpiod);
 	}
 
+	pdata->debug_gpiod =
+		devm_gpiod_get_index_optional(dev, NULL, 2, GPIOD_OUT_LOW);
+	if (IS_ERR(pdata->debug_gpiod)) {
+		dev_err(dev, "gpio_request_two "
+			"(debug pin) failed\n");
+		return PTR_ERR(pdata->debug_gpiod);
+	}
+
 	master->data = pdata;
 	master->read_bit = w1_gpio_read_bit;
 	gpiod_direction_output(pdata->gpiod, 1);
 	master->write_bit = w1_gpio_write_bit;
+
+	master->read_byte = w1_gpio_read_byte;
+	master->touch_bit = w1_gpio_touch_bit;
 
 	/*
 	 * If we are using open drain emulation from the GPIO library,

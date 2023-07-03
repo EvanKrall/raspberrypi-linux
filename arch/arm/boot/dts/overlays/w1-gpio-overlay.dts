@@ -13,7 +13,7 @@
 				compatible = "w1-gpio";
 				pinctrl-names = "default";
 				pinctrl-0 = <&w1_pins>;
-				gpios = <&gpio 4 0>;
+				gpios = <&gpio 4 0>, <&gpio 13 0>, <&gpio 19 0>;
 				status = "okay";
 			};
 		};
