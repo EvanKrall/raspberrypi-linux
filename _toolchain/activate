@@ -7,6 +7,8 @@ export KBUILD_BUILD_TIMESTAMP='ccache'
 
 PS1="${_OLDPS1}\[\033[0m\](ccache arm64) "
 
+pi_hostname="${pi_hostname:-cm4.local}"
+
 
 function deactivate() {
 	export PATH="$_OLDPATH"
@@ -29,8 +31,8 @@ function install_cm4_kernel() (
 
 function scp_module() (
 	set -xeuo pipefail
-	scp "$1" cm4.local:
-	ssh cm4.local -- "xz -f ${1##*/} && sudo cp ${1##*/}.xz /lib/modules/\$(uname -r)/kernel/$1.xz"
+	scp "$1" "${pi_hostname}":
+	ssh "${pi_hostname}" -- "xz -f ${1##*/} && sudo cp ${1##*/}.xz /lib/modules/\$(uname -r)/kernel/$1.xz"
 )
 
 function rsync_as_root() {
@@ -50,12 +52,12 @@ function build_and_install() (
 		arch/arm64/boot/dts/overlays/pipad-touchscreen.dtbo \
 		arch/arm64/boot/dts/overlays/pipad-bq25895.dtbo \
 		 arch/arm64/boot/dts/overlays/pipad-rtc.dtbo \
-		 cm4.local:/boot/overlays/
+		 "${pi_hostname}":/boot/overlays/
 
-	rsync_as_root --checksum arch/arm64/boot/Image cm4.local:/boot/kernel8.img
-	rsync_as_root --checksum ./config.txt cm4.local:/boot/config.txt
+	rsync_as_root --checksum arch/arm64/boot/Image "${pi_hostname}":/boot/kernel8.img
+	rsync_as_root --checksum ./config.txt "${pi_hostname}":/boot/config.txt
 
-	rsync_as_root goodix_9110_cfg.bin cm4.local:/lib/firmware/
+	rsync_as_root goodix_9110_cfg.bin "${pi_hostname}":/lib/firmware/
 
-	ssh cm4.local -f -- sudo shutdown -r now
+	ssh "${pi_hostname}" -f -- sudo shutdown -r now
 )
