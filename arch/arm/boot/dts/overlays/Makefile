@@ -265,6 +265,8 @@ dtbo-$(CONFIG_ARCH_BCM2835) += \
 	wm8960-soundcard.dtbo \
 	pipad-touchscreen.dtbo \
 	pipad-bq25895.dtbo \
+	pipad-bcm4329-cm4io.dtbo \
+	enable-wifi.dtbo \
 	pipad-rtc.dtbo
 
 targets += dtbs dtbs_install

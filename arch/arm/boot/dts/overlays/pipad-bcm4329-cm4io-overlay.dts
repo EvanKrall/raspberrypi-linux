@@ -1,0 +1,94 @@
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/bcm2835.h>
+#include <dt-bindings/clock/bcm2835.h>
+
+/ {
+    compatible = "brcm,bcm2835";
+
+    fragment@0 {
+        target = <&mmcnr>;
+        __overlay__ {
+            status = "disabled";
+        };
+    };
+
+    fragment@1 {
+        target = <&gpio>;
+        __overlay__ {
+            sdio_ovl_pins: sdio_ovl_pins {
+                brcm,pins = <22 23 24 25 26 27>;
+                brcm,function = <7>; /* ALT3 = SD1 */
+                brcm,pull = <0 2 2 2 2 2>;
+            };
+        };
+    };
+
+    fragment@2 {
+        target = <&gpio>;
+        __overlay__ {
+            bcm4329_pins: bcm4329_pins {
+                brcm,pins = <
+                    10
+                    9
+                    11
+                >;
+                brcm,function = <BCM2835_FSEL_GPIO_IN BCM2835_FSEL_GPIO_OUT BCM2835_FSEL_GPIO_OUT>;
+                brcm,pull = <BCM2835_PUD_OFF BCM2835_PUD_OFF BCM2835_PUD_OFF>;
+            };
+        };
+    };
+
+    fragment@3 {
+        target-path = "/";
+        __overlay__ {
+            wifi_pwrseq: wifi_pwrseq {
+                compatible = "mmc-pwrseq-simple";
+                reset-gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+            };
+        };
+    };
+
+    // fragment@3 {
+    //     target = <&gpio>;
+    //     __overlay__ {
+    //         line_b-hog {
+    //             gpio-hog;
+    //             gpios = <9 0>;
+    //             output-high;
+    //             line-name = "foo-bar-gpio";
+    //         };
+    //     };
+    // };
+
+    fragment@4 {
+        target = <&mmc>;
+        sdio_ovl: __overlay__ {
+            pinctrl-0 = <&sdio_ovl_pins>;
+            pinctrl-names = "default";
+            non-removable;
+            bus-width = <4>;
+            mmc-pwrseq = <&wifi_pwrseq>;
+            status = "okay";
+        };
+    };
+
+    fragment@5 {
+        target = <&mmc>;
+        __overlay__ {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            wifi@1 {
+                reg = <1>;
+                compatible = "brcm, ";
+                // interrupt-parent = <&gpio>;
+                // interrupts = <10 IRQ_TYPE_EDGE_FALLING>;
+                // interrupt-names = "host-wake";
+                // reset-gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
+            };
+        };
+    };
+};

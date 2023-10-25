@@ -35,6 +35,11 @@ function scp_module() (
 	ssh "${pi_hostname}" -- "xz -f ${1##*/} && sudo cp ${1##*/}.xz /lib/modules/\$(uname -r)/kernel/$1.xz"
 )
 
+function scp_overlay() (
+	set -xeuo pipefail
+	rsync_as_root "$@" "${pi_hostname}":/boot/overlays
+)
+
 function rsync_as_root() {
 	rsync -e ssh --rsync-path='sudo rsync' "$@"
 }
@@ -49,9 +54,7 @@ function build_and_install() (
 	scp_module drivers/video/backlight/tps61177a_bl.ko
 
 	rsync_as_root arch/arm64/boot/dts/overlays/vc4-kms-dsi-ti-sn65dsi83.dtbo \
-		arch/arm64/boot/dts/overlays/pipad-touchscreen.dtbo \
-		arch/arm64/boot/dts/overlays/pipad-bq25895.dtbo \
-		 arch/arm64/boot/dts/overlays/pipad-rtc.dtbo \
+		arch/arm64/boot/dts/overlays/pipad-*.dtbo \
 		 "${pi_hostname}":/boot/overlays/
 
 	rsync_as_root --checksum arch/arm64/boot/Image "${pi_hostname}":/boot/kernel8.img

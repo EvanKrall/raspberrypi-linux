@@ -1,0 +1,199 @@
+Trying to get linux to talk to the bq27541:
+
+```
+dtoverlay=w1-gpio,gpiopin=26,pullup=1
+```
+
+seems like it ought to work but nothing is detected in /sys/bus/w1/devices
+
+I just see the pi pulling the w1 line down for 500us, but nothing else happens.
+There's a linux driver for bq27xxx_hdq but it's not clear how to use it, besides including the module.
+There's a device tree documentation for using the bq27xxx with i2c, but nothing about how to use it with HDQ: Documentation/devicetree/bindings/power/supply/bq27xxx.yaml
+
+Just double-checking that the chip is ok: https://github.com/mozzwald/hdq-batt-status on an Arduino Uno seems to work just fine, reports the following:
+
+```
+iPhone 4G Battery Detected
+Device: bq27541
+Firmware: v1.25
+Hardware: 0xB5
+Remaining Capacity: 1166 mAH
+Full Charge Capacity: 6264 mAH
+Design Capacity: 6500 mAH
+Time to empty: N/A, not discharging
+Time to full: N/A, not charging
+State of Charge: 19%
+Battery Voltage: 3.73V (3730mV)
+Temperature: 24.00�C / 75.38�F / 2971 raw
+Charge Cycle Count: 146 times
+```
+
+
+Ok, looks like I need to do this:
+
+```
+sudo bash -c 'echo 01-000000000000 > w1_master_add'
+```
+
+from within /sys/bus/w1/devices/w1_bus_master1
+
+This instantiates the device.
+
+But 
+
+```
+pi@raspberrypi:/sys/bus/w1/devices/w1_bus_master1/01-000000000000/power_supply/bq27541-battery$ cat present
+0
+```
+
+why tho
+
+Looks like the timing is too fast?
+
+Let's patch w1_io.c so that we can change delay_coef at runtime:
+
+```
+-module_param_named(delay_coef, w1_delay_parm, int, 0);
++module_param_named(delay_coef, w1_delay_parm, int, 0644);
+```
+(is that all we need?)
+
+```
+cd /sys/bus/w1/devices/w1_bus_master1/
+sudo bash -c 'echo 0 > w1_master_search'
+sudo bash -c 'echo 01-000000000000 > w1_master_add'
+cd 01-000000000000/power_supply/bq27541-battery/
+sudo bash -c 'echo 3 > /sys/module/wire/parameters/delay_coef'
+cat present
+```
+
+
+Timing looks OK now, but it's sending 48 bits?
+
+
+let's start doing our standard kernel module debugging stuff... off to my notes!
+
+Looks like it's...writing while reading?
+
+According to the wikipedia page on 1-Wire:
+
+> When receiving data, the master sends a 1–15-μs 0-volt pulse to start each bit. If the transmitting slave unit wants to send a "1", it does nothing, and the bus goes to the pulled-up voltage. If the transmitting slave wants to send a "0", it pulls the data line to ground for 60 μs.
+
+Does HDQ work the same way? slua408a.pdf is not enlightening me.
+
+TODO:
+
+ - Check the source for that arduino HDQLib, see what it does
+
+Looks like hdq_python (which uses uart) just reads, doesn't do any writing.
+HDQLib (arduino library) simply reads:
+
+```
+for (uint8_t ii = 0; ii < 8; ii++) {
+    // Wait for the slave to toggle a low, or fail
+    maxTries = HDQ_DELAY_FAIL_TRIES;
+	while (_HDQ_readPin() != 0 && maxTries-- > 0)
+		if (maxTries == 1) return 0xFF;
+
+    // Wait until Tdsub and half or one bit has passed
+	delayMicroseconds(((HDQ_DELAY_TDW0 - HDQ_DELAY_TDW1) / 2) + HDQ_DELAY_TDW1);
+    // Read the bit
+    result |= _HDQ_readPin()<<ii;
+
+    // Wait until Tssub has passed
+	delayMicroseconds(HDQ_DELAY_TCYCD - HDQ_DELAY_TDW0);
+}
+```
+
+so it just looks for a low transition (driven by the slave), then samples the value at the time halfway between a 0 or a 1.
+
+Let's get w1-gpio.c to do the same?
+
+Transmit timing is all off, too, let's make a touch_bit implementation that uses the right HDQ timing.
+
+
+```
+pi@raspberrypi:~$ cd /sys/bus/w1/devices/w1_bus_master1/
+000000/power_supply/bq27541-battery/
+sudo bash -c 'echo 3 > /sys/module/wire/parameters/delay_coef'
+cat presentpi@raspberrypi:/sys/bus/w1/devices/w1_bus_master1$ sudo bash -c 'echo 0 > w1_master_search'
+pi@raspberrypi:/sys/bus/w1/devices/w1_bus_master1$ sudo bash -c 'echo 01-000000000000 > w1_master_add'
+pi@raspberrypi:/sys/bus/w1/devices/w1_bus_master1$ cd 01-000000000000/power_supply/bq27541-battery/
+pi@raspberrypi:/sys/bus/w1/devices/w1_bus_master1/01-000000000000/power_supply/bq27541-battery$ sudo bash -c 'echo 3 > /sys/module/wire/parameters/delay_coef'
+pi@raspberrypi:/sys/bus/w1/devices/w1_bus_master1/01-000000000000/power_supply/bq27541-battery$ cat present
+1
+pi@raspberrypi:/sys/bus/w1/devices/w1_bus_master1/01-000000000000/power_supply/bq27541-battery$
+```
+
+hell yeah
+but it's not repeatable :(
+running it again returns 0 now
+
+From the logic analyzer I can tell that the bq27xxx is returning data, I see 4 transactions (not just 3)
+
+let's rerun this with ftrace
+*facepalm* and of course it returns 1 with ftrace
+
+
+ok I wrote an analyzer for my saleae: https://github.com/EvanKrall/pwm_serial_analyzer
+Comparing the timing that my driver is using vs. the timing that the arduino library uses, looks like the arduino library is a bit slower.
+
+new script:
+
+```
+cd /sys/bus/w1/devices/w1_bus_master1/
+sudo bash -c 'echo 0 > w1_master_search'
+sudo bash -c 'echo 01-000000000000 > w1_master_add'
+cd 01-000000000000/power_supply/bq27541-battery/
+cat present
+```
+
+Looks like the pi is sending another byte while the bq27 is still talking: 
+
+![](Screenshot from 2023-07-02 15-49-23.png)
+
+Maybe I'm sleeping too long waiting for low transitions?
+
+```
+static u8 w1_gpio_read_byte(void *data)
+{
+	unsigned long flags = 0;
+
+	int i;
+	int j;
+	u8 res = 0;
+	int usecs_to_sleep = 95;
+
+	for (i = 0; i < 8; ++i) {
+		// wait for low transition up to 950us
+		for (j = 950; j > 0 && w1_gpio_read_bit(data); j -= usecs_to_sleep) {
+			udelay(usecs_to_sleep);
+		}
+
+		/* sample timing is critical here */
+		local_irq_save(flags);
+		// sleep until midway through the bit.
+		// per bq27541 datasheet, t_(DW1) is 32-50us, t_(DW0) is 80-145us, so we want to look between 50 and 80us.
+		udelay(65);
+
+		res |= (w1_gpio_read_bit(data) << i);
+		local_irq_restore(flags);
+	}
+
+	return res;
+}
+```
+
+95 is way too long. Let's try 10.
+
+d'oh, I'm also forgetting to wait for the next high transition, so I'm starting the next iteration of the loop midway through the previous bit.
+
+
+Ok, that's fixed, it helped a lot, but not entirely.
+
+Now it seems like the reading code is getting interrupted or something? I had it toggle a GPIO pin during certain phases of the read process:
+
+![](Screenshot from 2023-07-02 17-32-28.png)
+![](Screenshot from 2023-07-02 17-32-44.png)
+
+

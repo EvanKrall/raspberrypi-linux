@@ -1,0 +1,86 @@
+Trying to get the bcm4329 working using my breakout board for the landscape dock connector.
+
+I've got a dtoverlay file that I feel like should work?
+With `sudo dtc -I fs /sys/firmware/devicetree/` on stock device tree, I don't see the existing adapter in the tree (should be under one of the two mmc@7e300000 nodes (sdhci, not mmcnr)) but it's not there? Even though wifi is working? Weird.
+
+
+OK I think I fixed an issue in the overlay (it couldn't find brcmf, I guess because it doesn't have an & in front in bcm270x.dtsi?)
+
+Now wifi is (correctly) not working, but I don't know if this thing is trying to do anything.
+Where the heck is are my other Saleae wires? (yellow thru purple)
+OK I hooked up the first 4 wires, and there's definitely stuff happening.
+
+What happens if I comment out the bcm4329 block of the overlay?
+The MMC driver still looks for something on the bus.
+
+Tomorrow, do I have the courage to actually plug in the board from the iPad?
+DO NOT FORGET TO CONNECT ANTENNAS TO THE ANTENNA PORTS!
+
+ok I connnected antennas
+let's see if I can fuck up 2 tech things today
+
+uhh is it working?
+
+    link/ether e4:5f:01:c2:51:72 brd ff:ff:ff:ff:ff:ff
+
+oh no lol, forgot to enable the overlay. that's the built-in one.
+
+here goes nothing
+
+k it didn't work
+
+
+ok found the source code
+I've enabled debugging in make menuconfig
+compiling the module
+
+cool, getting brcmfmac messages in dmesg now:
+
+with builtin wifi card:
+```
+[   16.353014] calling  brcmfmac_module_init+0x0/0xd4 [brcmfmac] @ 168
+[   16.354715] brcmfmac: F1 signature read @0x18000000=0x15264345
+[   16.370469] brcmfmac: brcmf_fw_alloc_request: using brcm/brcmfmac43455-sdio for chip BCM4345/6
+[   16.372346] usbcore: registered new interface driver brcmfmac
+[   16.372370] initcall brcmfmac_module_init+0x0/0xd4 [brcmfmac] returned 0 after 18757 usecs
+[   16.372637] brcmfmac mmc1:0001:1: Direct firmware load for brcm/brcmfmac43455-sdio.raspberrypi,4-compute-module.bin failed with error -2
+[   16.621624] brcmfmac: brcmf_fw_alloc_request: using brcm/brcmfmac43455-sdio for chip BCM4345/6
+[   16.621794] brcmfmac: brcmf_fw_alloc_request: using brcm/brcmfmac43455-sdio for chip BCM4345/6
+[   16.627013] brcmfmac: brcmf_c_preinit_dcmds: Firmware: BCM4345/6 wl0: Nov  1 2021 00:37:25 version 7.45.241 (1a2f2fa CY) FWID 01-703fd60
+[   17.689446] brcmfmac: brcmf_cfg80211_set_power_mgmt: power save enabled
+```
+
+let's see what happens when we reenable the dtoverlay
+
+jack shit. No dmesg messages. wtf.
+
+For tomorrow:
+
+ - hook up the reset/host_wake pins to the saleae
+ - see what happens
+
+reset and host_wake pins staying low
+welltheresyourproblem.jpg
+
+...can I force the brcmfmac driver to initialize?
+
+
+Hm interesting. I've been feeding 1.8V to VCC_MAIN_WL, instead of 3.3v
+I've also been sending a gpio line to the pp1v8_x17 line
+
+
+fixed all that, still running into the issue where my driver is just not loading?
+
+Let's try booting with `dtoverlay=disable-wifi` so the mmc driver is not initialized, then load my overlay with trace-cmd.
+
+
+brcmfmac is handled by brcmfmac.dyndbg="+pmf" brcmutil.dyndbg="+pmf" in /boot/cmdline.txt
+```
+sudo bash -c 'echo "file bcm2835-mmc.c +pmf" > /sys/kernel/debug/dynamic_debug/control'
+sudo trace-cmd record -p function_graph -F dtoverlay enable-wifi
+trace-cmd report > report.txt
+```
+
+
+This article is fantastic: https://community.silabs.com/s/article/linux-sdio-detection?language=en_US
+
