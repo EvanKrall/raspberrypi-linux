@@ -1,0 +1,1 @@
+console=tty1 console=ttyS0,115200n8 root=PARTUUID=e45dbad3-02 rootfstype=ext4 fsck.repair=yes rootwait loglevel=8 earlycon=uart8250,mmio32,0xfe215040 debug initcall_debug ti_sn65dsi83.dyndbg="+pmf" vc4.dyndbg="+pmf" panel_simple.dyndbg="+pmf" drm_kms_helper.dyndbg="+pmf" component.dyndbg="+pmf" vc4-drm.dyndbg="+pmf"
