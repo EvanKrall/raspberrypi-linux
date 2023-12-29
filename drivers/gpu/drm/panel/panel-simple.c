@@ -4573,21 +4573,26 @@ static const struct panel_desc arm_rtsm = {
 };
 
 static const struct display_timing lg_lp097x02_slq1_timing = {
-	.pixelclock = { 65000000, 65000000, 65000000 },
+	// .pixelclock = { 65000000, 65000000, 65000000 },
+	// .pixelclock = { 100000000, 100000000, 100000000 },
+	.pixelclock = { 80000000, 80000000, 80000000 },
+	// .pixelclock = { 50000000, 50000000, 50000000 },
 	.hactive = { 1024, 1024, 1024 },
-	.hfront_porch = { 120, 120, 120 },
-	.hback_porch = { 220, 220, 220 },
-	.hsync_len =  { 200, 200, 200 },
+	.hfront_porch = { 252, 252, 252 },
+	.hback_porch = { 252, 252, 252 },
+	.hsync_len =  { 252, 252, 252 },
 
 	.vactive = { 768, 768, 768 },
 	.vfront_porch = { 7, 7, 7 },
-	.vback_porch = { 21, 21, 21 },
+	// .vback_porch = { 21, 21, 21 },
+	.vback_porch = { 15, 15, 15 },
 	.vsync_len = { 10, 10, 10 },
 	.flags = DISPLAY_FLAGS_DE_HIGH,
 };
 
 static const struct panel_desc lg_lp097x02_slq1 = {
-	.timings = &hannstar_hsd100pxn1_timing,
+	// .timings = &hannstar_hsd100pxn1_timing,
+	.timings = &lg_lp097x02_slq1_timing,
 	.num_timings = 1,
 	.bpc = 6,
 	.size = {
@@ -4596,7 +4601,7 @@ static const struct panel_desc lg_lp097x02_slq1 = {
 	},
 	.bus_format = MEDIA_BUS_FMT_RGB666_1X7X3_SPWG,
 	.connector_type = DRM_MODE_CONNECTOR_LVDS,
-	// .bus_flags = DRM_BUS_FLAG_DE_HIGH,
+	.bus_flags = DRM_BUS_FLAG_DE_HIGH,
 };
 
 static const struct of_device_id platform_of_match[] = {

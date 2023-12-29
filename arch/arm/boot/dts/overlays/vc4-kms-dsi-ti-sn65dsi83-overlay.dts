@@ -14,8 +14,8 @@
 		target = <&gpio>;
 		__overlay__ {
 			pwm_pins: pwm_pins {
-				brcm,pins = <13>;
-				brcm,function = <4>; /* Alt1 */
+				brcm,pins = <13>;  // LVDS_PWM
+				brcm,function = <4>; /* Alt0 */
 			};
 		};
 	};
@@ -39,21 +39,21 @@
 			    regulator-name = "lvds18";
 			    regulator-min-microvolt = <1800000>;
 			    regulator-max-microvolt = <1800000>;
-			    gpio = <&gpio 5 0>;
+			    gpio = <&gpio 5 0>; // LVDS_LDO_EN
 			    startup-delay-us = <70000>;
 			    enable-active-high;
 			    vin-supply = <&vdd_3v3_reg>;
 			};
 
 			//#gpio-cells = <2>;
-			/* Panel backlight through PWM0 on GPIO 12 */
+			/* Panel backlight through PWM0 on GPIO 13 */
 			backlight_lvds: backlight {
 				compatible = "pwm-backlight";
-				pwms = <&pwm 0 5000000>; /* Period of 5000000ns means 200Hz */
+				pwms = <&pwm 1 5000000>; /* Period of 5000000ns means 200Hz */
 				brightness-levels = <0  1000>;
 				num-interpolated-steps = <1000>;
 				default-brightness-level = <800>;
-				enable-gpios = <&gpio 13 0>; /* Backlight enable... */
+				enable-gpios = <&gpio 12 0>; // LVDS_PWM
 			};
 
 			panel: panel {
@@ -87,8 +87,8 @@
 			bridge@2d {
 				compatible = "ti,sn65dsi83";
 				reg = <0x2d>;
-				enable-gpios = <&gpio 6 0>;
-
+				enable-gpios = <&gpio 6 0>;  // LVDS_EN
+				// IRQ pin not used? Would be LVDS_IRQ = gpio 26
 				ports {
 					#address-cells = <1>;
 					#size-cells = <0>;
