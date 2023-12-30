@@ -91,7 +91,7 @@ dtoverlay=gpio-shutdown,gpio_pin=22,active_low=1,gpio_pull=up,debounce=10
 dtoverlay=gpio-poweroff,gpiopin=25,active_low=1
 dtoverlay=pipad-rtc
 dtoverlay=vc4-kms-dsi-ti-sn65dsi83
-#dtoverlay=pipad-touchscreen
+dtoverlay=pipad-touchscreen
 
 #dtoverlay=pipad-bcm4329-cm4io
 #dtoverlay=disable-wifi
