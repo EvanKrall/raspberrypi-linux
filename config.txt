@@ -93,5 +93,7 @@ dtoverlay=pipad-rtc
 dtoverlay=vc4-kms-dsi-ti-sn65dsi83
 dtoverlay=pipad-touchscreen
 
+dtoverlay=pipad-i2s-soundcard
+
 #dtoverlay=pipad-bcm4329-cm4io
 #dtoverlay=disable-wifi

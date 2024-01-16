@@ -40,6 +40,7 @@ struct aic32x4_priv {
 	bool swapdacs;
 	int rstn_gpio;
 	const char *mclk_name;
+	const char *bclk_name;
 
 	struct regulator *supply_ldo;
 	struct regulator *supply_iov;
@@ -234,12 +235,14 @@ static const struct snd_kcontrol_new aic32x4_mfp3[] = {
 };
 
 static const struct snd_kcontrol_new aic32x4_mfp4[] = {
-	SOC_SINGLE_BOOL_EXT("MFP4 GPIO", 0, NULL, aic32x4_set_mfp4_gpio),
+	SOC_SINGLE("MFP4 GPIO", AIC32X4_MISOCTL, 0, 1, 0),
+	// SOC_SINGLE_BOOL_EXT("MFP4 GPIO", 0, NULL, aic32x4_set_mfp4_gpio),
 };
 
 static const struct snd_kcontrol_new aic32x4_mfp5[] = {
-	SOC_SINGLE_BOOL_EXT("MFP5 GPIO", 0, aic32x4_get_mfp5_gpio,
-		aic32x4_set_mfp5_gpio),
+	SOC_SINGLE("MFP5 GPIO", AIC32X4_GPIOCTL, 0, 1, 0),
+	// SOC_SINGLE_BOOL_EXT("MFP5 GPIO", 0, aic32x4_get_mfp5_gpio,
+	// 	aic32x4_set_mfp5_gpio),
 };
 
 /* 0dB min, 0.5dB steps */
@@ -780,26 +783,26 @@ static int aic32x4_setup_clocks(struct snd_soc_component *component,
 						if (clk_round_rate(clocks[0].clk, dac_clock_rate) == 0)
 							continue;
 
-						clk_set_rate(clocks[0].clk,
+						clk_set_rate(clocks[0].clk, // pll
 							dac_clock_rate);
 
-						clk_set_rate(clocks[1].clk,
+						clk_set_rate(clocks[1].clk, // nadc
 							sample_rate * aosr *
 							madc);
-						clk_set_rate(clocks[2].clk,
+						clk_set_rate(clocks[2].clk, // madc
 							sample_rate * aosr);
 						aic32x4_set_aosr(component,
 							aosr);
 
-						clk_set_rate(clocks[3].clk,
+						clk_set_rate(clocks[3].clk, // ndac
 							sample_rate * dosr *
 							mdac);
-						clk_set_rate(clocks[4].clk,
+						clk_set_rate(clocks[4].clk, // mdac
 							sample_rate * dosr);
 						aic32x4_set_dosr(component,
 							dosr);
 
-						clk_set_rate(clocks[5].clk,
+						clk_set_rate(clocks[5].clk, // bdiv
 							sample_rate * channels *
 							bit_depth);
 
@@ -1215,9 +1218,17 @@ static int aic32x4_parse_dt(struct aic32x4_priv *aic32x4,
 		return -ENOMEM;
 
 	ret = of_property_match_string(np, "clock-names", "mclk");
-	if (ret < 0)
-		return -EINVAL;
-	aic32x4->mclk_name = of_clk_get_parent_name(np, ret);
+	if (ret < 0) {
+		ret = of_property_match_string(np, "clock-names", "bclk");
+		// if neither mclk nor bclk is specified, error out.
+		if (ret < 0)
+			return -EINVAL;
+		aic32x4->mclk_name = "mclk";
+		aic32x4->bclk_name = of_clk_get_parent_name(np, ret);
+	} else {
+		aic32x4->mclk_name = of_clk_get_parent_name(np, ret);
+		aic32x4->bclk_name = "bclk";
+	}
 
 	aic32x4->swapdacs = false;
 	aic32x4->micpga_routing = 0;
@@ -1353,6 +1364,7 @@ int aic32x4_probe(struct device *dev, struct regmap *regmap)
 		aic32x4->micpga_routing = pdata->micpga_routing;
 		aic32x4->rstn_gpio = pdata->rstn_gpio;
 		aic32x4->mclk_name = "mclk";
+		aic32x4->bclk_name = "bclk";
 	} else if (np) {
 		ret = aic32x4_parse_dt(aic32x4, np);
 		if (ret) {
@@ -1365,6 +1377,7 @@ int aic32x4_probe(struct device *dev, struct regmap *regmap)
 		aic32x4->micpga_routing = 0;
 		aic32x4->rstn_gpio = -1;
 		aic32x4->mclk_name = "mclk";
+		aic32x4->bclk_name = "bclk";
 	}
 
 	if (gpio_is_valid(aic32x4->rstn_gpio)) {
@@ -1390,7 +1403,7 @@ int aic32x4_probe(struct device *dev, struct regmap *regmap)
 	if (ret)
 		goto err_disable_regulators;
 
-	ret = aic32x4_register_clocks(dev, aic32x4->mclk_name);
+	ret = aic32x4_register_clocks(dev, aic32x4->mclk_name, aic32x4->bclk_name);
 	if (ret)
 		goto err_disable_regulators;
 

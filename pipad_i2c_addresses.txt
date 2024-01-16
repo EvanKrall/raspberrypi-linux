@@ -1,20 +1,21 @@
 i2c bus 1:
-	0x24 tlv320aic3206 audio codec
-	0x2c tps61177a     backlight controller (0x58/0x59??)
-	0x51 rv-8263-c7    RTC
-	0x5d gt9110        touchscreen controller
-	0x6a bq25895       battery charger
+    0x20 mcp23008       gpio expander
+    0x24 tlv320aic3206  audio codec
+    0x2c tps61177a      backlight controller (0x58/0x59??)
+    0x51 rv-8263-c7     RTC
+    0x5d gt9110         touchscreen controller
+    0x6a bq25895        battery charger
 
 
 i2c bus 10:
-	0x2d sn65dsi83 		DSI->LVDS converter
+    0x2d sn65dsi83      DSI->LVDS converter
 
-	0x4f lp097x02		LCD panel EDID
-	0x50	"				"
-	0x51	"				"
-	0x52	"				"
-	0x53	"				"
-	0x54	"				"
-	0x55	"				"
-	0x56	"				"
-	0x57	"				"
+    0x4f lp097x02       LCD panel EDID
+    0x50    "               "
+    0x51    "               "
+    0x52    "               "
+    0x53    "               "
+    0x54    "               "
+    0x55    "               "
+    0x56    "               "
+    0x57    "               "

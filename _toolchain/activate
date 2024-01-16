@@ -19,7 +19,7 @@ function deactivate() {
 }
 
 function install_cm4_kernel() (
-	set -eu -o pipefail
+	set -xeu -o pipefail
 	cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}"))/.."
 	sudo env PATH=$PATH make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- INSTALL_MOD_PATH=mnt/ext4 modules_install
 	sudo cp mnt/fat32/kernel8.img mnt/fat32/kernel8-backup.img
@@ -32,7 +32,7 @@ function install_cm4_kernel() (
 function scp_module() (
 	set -xeuo pipefail
 	scp "$1" "${pi_hostname}":
-	ssh "${pi_hostname}" -- "xz -f ${1##*/} && sudo cp ${1##*/}.xz /lib/modules/\$(uname -r)/kernel/$1.xz"
+	ssh "${pi_hostname}" -- "xz -f ${1##*/} && sudo mkdir -p /lib/modules/\$(uname -r)/kernel/$(dirname $1) && sudo cp ${1##*/}.xz /lib/modules/\$(uname -r)/kernel/$1.xz"
 )
 
 function scp_overlay() (
@@ -40,24 +40,28 @@ function scp_overlay() (
 	rsync_as_root "$@" "${pi_hostname}":/boot/overlays
 )
 
-function rsync_as_root() {
+function rsync_as_root() (
+	set -xeuo pipefail
 	rsync -e ssh --rsync-path='sudo rsync' "$@"
-}
+)
 
 function build_and_install() (
-	set -e
+	set -xeuo pipefail
 	make -j4 Image modules dtbs
 	python3 ./construct_gt9110_cfg.py
 	cm4_install
 )
 
 function cm4_install() (
+	set -xeuo pipefail
 	scp_module drivers/gpu/drm/panel/panel-simple.ko
 	scp_module drivers/input/touchscreen/goodix.ko
+	scp_module drivers/clk/clk-si5351.ko
 
-	rsync_as_root arch/arm64/boot/dts/overlays/vc4-kms-dsi-ti-sn65dsi83.dtbo \
-		arch/arm64/boot/dts/overlays/pipad-*.dtbo \
-		 "${pi_hostname}":/boot/overlays/
+	# ssh "${pi_hostname}" -f -- sudo depmod
+
+	scp_overlay arch/arm64/boot/dts/overlays/pipad-*.dtbo \
+		arch/arm64/boot/dts/overlays/vc4-kms-dsi-ti-sn65dsi83.dtbo
 
 	rsync_as_root --checksum arch/arm64/boot/Image "${pi_hostname}":/boot/kernel8.img
 	rsync_as_root --checksum ./config.txt "${pi_hostname}":/boot/config.txt

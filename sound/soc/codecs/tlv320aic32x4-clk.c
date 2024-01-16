@@ -9,6 +9,7 @@
 
 #include <linux/clk-provider.h>
 #include <linux/clkdev.h>
+#include <linux/clk.h>
 #include <linux/regmap.h>
 #include <linux/device.h>
 
@@ -243,7 +244,7 @@ static int clk_aic32x4_pll_set_rate(struct clk_hw *hw,
 static int clk_aic32x4_pll_set_parent(struct clk_hw *hw, u8 index)
 {
 	struct clk_aic32x4 *pll = to_clk_aic32x4(hw);
-
+	dev_dbg(pll->dev, "clk_aic32x4_pll_set_parent called with index %d\n", index);
 	return regmap_update_bits(pll->regmap,
 				AIC32X4_CLKMUX,
 				AIC32X4_PLL_CLKIN_MASK,
@@ -467,9 +468,15 @@ static struct clk *aic32x4_register_clk(struct device *dev,
 	return devm_clk_register(dev, &priv->hw);
 }
 
-int aic32x4_register_clocks(struct device *dev, const char *mclk_name)
+int aic32x4_register_clocks(struct device *dev, const char *mclk_name, const char *bclk_name)
 {
 	int i;
+	int ret;
+	struct clk *pll_clk = NULL;
+	struct clk *pll_parent_clk = NULL;
+	char const * const pll_src_names[] = {"mclk", "bclk", "gpio", "din"};
+
+	dev_dbg(dev, "aic32x4_register_clocks called with mclk_name=%s, bclk_name=%s\n", mclk_name, bclk_name);
 
 	/*
 	 * These lines are here to preserve the current functionality of
@@ -478,12 +485,30 @@ int aic32x4_register_clocks(struct device *dev, const char *mclk_name)
 	 * rather than code.
 	 */
 	aic32x4_clkdesc_array[0].parent_names =
-			(const char* []) { mclk_name, "bclk", "gpio", "din" };
+			(const char* []) { mclk_name, bclk_name, "gpio", "din" };
 	aic32x4_clkdesc_array[1].parent_names =
-			(const char *[]) { mclk_name, "bclk", "gpio", "pll" };
+			(const char *[]) { mclk_name, bclk_name, "gpio", "pll" };
 
 	for (i = 0; i < ARRAY_SIZE(aic32x4_clkdesc_array); ++i)
 		aic32x4_register_clk(dev, &aic32x4_clkdesc_array[i]);
+
+	pll_clk = devm_clk_get(dev, "pll");
+	if (IS_ERR(pll_clk))
+		return PTR_ERR(pll_clk);
+
+	for (i = 0; i < ARRAY_SIZE(pll_src_names); ++i) {
+		pll_parent_clk = devm_clk_get(dev, pll_src_names[i]);
+		if (!IS_ERR(pll_parent_clk))
+			break;
+	}
+
+	if (pll_parent_clk == NULL || IS_ERR(pll_parent_clk)) {
+		dev_err(dev, "Parent clock not found\n");
+	}
+	dev_dbg(dev, "aic32x4_register_clocks: pll_parent_clk = %lx\n", pll_parent_clk);
+	ret = clk_set_parent(pll_clk, pll_parent_clk);
+	if (ret < 0)
+		return ret;
 
 	return 0;
 }
