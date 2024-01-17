@@ -1,28 +1,14 @@
 #!/usr/bin/python3
 
+from smbus2 import SMBus
 import textwrap
 import shutil
-import sys
 
 
-if len(sys.argv) > 1:
+I2C_ADDRESS = 0x2d
 
-    regs = [0 for _ in range(0x00, 0xE5+1)]
-    with open(sys.argv[1]) as f:
-        for line in f:
-            if line.startswith("0x"):
-                reg, val = line.split("              ")
-                reg = int(reg, 0)
-                val = int(val, 0)
-                regs[reg] = val
-else:    
-    from smbus2 import SMBus
-    I2C_ADDRESS = 0x2d
-
-    with SMBus(10) as bus:
-        regs = [bus.read_byte_data(I2C_ADDRESS, register, force=True) for register in range(0x00, 0xE5+1)]
-
-
+with SMBus(10) as bus:
+    regs = [bus.read_byte_data(I2C_ADDRESS, register, force=True) for register in range(0x00, 0xE5+1)]
 
 
 def bit(reg_num, bit_num):
@@ -239,7 +225,7 @@ print_variable("CHA_LVDS_TERM", 0x1A, 1, conv=["100Ω differential termination",
 
 print('\n')
 print_variable("REG1B                           ", 0x1B, 7, 0)
-print_variable("CHA_LVDS_CM_ADJUST", 5, 4, conv=[
+print_variable("CHA_LVDS_CM_ADJUST", 0x1B, 5, 4, conv=[
     "No change to common mode voltage (default)",
     "Adjust common mode voltage down 3%",
     "Adjust common mode voltage up 3%",

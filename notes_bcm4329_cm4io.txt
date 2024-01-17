@@ -84,3 +84,9 @@ trace-cmd report > report.txt
 
 This article is fantastic: https://community.silabs.com/s/article/linux-sdio-detection?language=en_US
 
+By adding a mmc-pwrseq-simple to my device tree and setting it as the mmc-pwrseq property of the mmc node, I can see that the WLAN_RESET_L pin is now being toggled at detection time.
+
+Look at page 102 of the BCM4329 datasheet, “Sequencing of Reset and Regulator Control Signals”
+
+I should inspect the solder joints on the breakout board, make sure nothing stupid is happening.
+Yeah, I kinda suspect these joints. Hard to tell on the microscope tbh, but I should reflow this with some flux to be sure.
