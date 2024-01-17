@@ -505,7 +505,7 @@ int aic32x4_register_clocks(struct device *dev, const char *mclk_name, const cha
 	if (pll_parent_clk == NULL || IS_ERR(pll_parent_clk)) {
 		dev_err(dev, "Parent clock not found\n");
 	}
-	dev_dbg(dev, "aic32x4_register_clocks: pll_parent_clk = %lx\n", pll_parent_clk);
+	dev_dbg(dev, "aic32x4_register_clocks: pll_parent_clk = %p\n", (void *)pll_parent_clk);
 	ret = clk_set_parent(pll_clk, pll_parent_clk);
 	if (ret < 0)
 		return ret;

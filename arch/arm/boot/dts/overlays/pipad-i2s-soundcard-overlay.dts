@@ -124,6 +124,7 @@
 
                 clocks = <&clocks BCM2835_CLOCK_PCM>;
                 clock-names = "bclk";
+                ground-centered-mode;
 
                 aic32x4-gpio-func = <
                     0xff

@@ -107,7 +107,8 @@ int aic32x4_register_clocks(struct device *dev, const char *mclk_name, const cha
 #define AIC32X4_RMICPGAVOL	AIC32X4_REG(1, 60)
 #define TAS2505_REFPOWERUP	AIC32X4_REG(1, 122)
 #define AIC32X4_REFPOWERUP	AIC32X4_REG(1, 123)
-
+// #define AIC32X4_CHRGPUMP    AIC32X4_REG(1, 124)  // Only functional on 32x6
+#define AIC32X4_HPDRVCFG    AIC32X4_REG(1, 125)  // Only functional on 32x6
 /* Bits, masks, and shifts */
 
 /* AIC32X4_CLKMUX */
@@ -194,6 +195,7 @@ int aic32x4_register_clocks(struct device *dev, const char *mclk_name, const cha
 #define AIC32X4_RADC_EN			BIT(6)
 
 /* AIC32X4_PWRCFG */
+#define AIC32X4_CHRGPUMPENABLE      BIT(1)
 #define AIC32X4_AVDDWEAKDISABLE		BIT(3)
 
 /* AIC32X4_LDOCTL */
@@ -221,6 +223,10 @@ int aic32x4_register_clocks(struct device *dev, const char *mclk_name, const cha
 #define AIC32X4_REFPOWERUP_40MS		0x05
 #define AIC32X4_REFPOWERUP_80MS		0x06
 #define AIC32X4_REFPOWERUP_120MS	0x07
+
+/* AIC32X4_HPDRVCFG */
+#define AIC32X4_GROUND_CENTERED  BIT(4)
+
 
 /* Common mask and enable for all of the dividers */
 #define AIC32X4_DIVEN           BIT(7)

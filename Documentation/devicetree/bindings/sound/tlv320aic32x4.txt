@@ -19,11 +19,13 @@ Required properties:
 
 Optional properties:
  - reset-gpios: Reset-GPIO phandle with args as described in gpio/gpio.txt
- - clocks/clock-names: Clock named 'mclk' for the master clock of the codec.
+ - clocks/clock-names: Clock named 'mclk' or 'bclk' for the input to the
+   codec PLL, depending on which pin is i
    See clock/clock-bindings.txt for information about the detailed format.
  - aic32x4-gpio-func - <array of 5 int>
 	- Types are defined in include/sound/tlv320aic32x4.h
-
+ - ground-centered-mode: Flag to enable ground-centered mode for the
+   headphone drivers. Only works on the 32x6 variants.
 
 Example:
 

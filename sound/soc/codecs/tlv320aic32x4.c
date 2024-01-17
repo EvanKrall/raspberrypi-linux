@@ -38,6 +38,7 @@ struct aic32x4_priv {
 	u32 power_cfg;
 	u32 micpga_routing;
 	bool swapdacs;
+	bool ground_centered;
 	int rstn_gpio;
 	const char *mclk_name;
 	const char *bclk_name;
@@ -584,12 +585,12 @@ static const struct regmap_range_cfg aic32x4_regmap_pages[] = {
 		.window_start = 0,
 		.window_len = 128,
 		.range_min = 0,
-		.range_max = AIC32X4_REFPOWERUP,
+		.range_max = AIC32X4_HPDRVCFG,
 	},
 };
 
 const struct regmap_config aic32x4_regmap_config = {
-	.max_register = AIC32X4_REFPOWERUP,
+	.max_register = AIC32X4_HPDRVCFG,
 	.ranges = aic32x4_regmap_pages,
 	.num_ranges = ARRAY_SIZE(aic32x4_regmap_pages),
 };
@@ -1019,8 +1020,13 @@ static int aic32x4_component_probe(struct snd_soc_component *component)
 		snd_soc_component_write(component, AIC32X4_MICBIAS,
 				AIC32X4_MICBIAS_LDOIN | AIC32X4_MICBIAS_2075V);
 	}
+
+	tmp_reg = snd_soc_component_read(component, AIC32X4_PWRCFG);
 	if (aic32x4->power_cfg & AIC32X4_PWR_AVDD_DVDD_WEAK_DISABLE)
-		snd_soc_component_write(component, AIC32X4_PWRCFG, AIC32X4_AVDDWEAKDISABLE);
+		tmp_reg |= AIC32X4_AVDDWEAKDISABLE;
+	if (aic32x4->ground_centered)
+		tmp_reg |= AIC32X4_CHRGPUMPENABLE;
+	snd_soc_component_write(component, AIC32X4_PWRCFG, tmp_reg);
 
 	tmp_reg = (aic32x4->power_cfg & AIC32X4_PWR_AIC32X4_LDO_ENABLE) ?
 			AIC32X4_LDOCTLEN : 0;
@@ -1056,6 +1062,11 @@ static int aic32x4_component_probe(struct snd_soc_component *component)
 	snd_soc_component_write(component, AIC32X4_ADCSETUP, tmp_reg |
 				AIC32X4_LADC_EN | AIC32X4_RADC_EN);
 	snd_soc_component_write(component, AIC32X4_ADCSETUP, tmp_reg);
+
+	tmp_reg = snd_soc_component_read(component, AIC32X4_HPDRVCFG);
+	if (aic32x4->ground_centered)
+		tmp_reg |= AIC32X4_GROUND_CENTERED;
+	snd_soc_component_write(component, AIC32X4_HPDRVCFG, tmp_reg);
 
 	/*
 	 * Enable the fast charging feature and ensure the needed 40ms ellapsed
@@ -1237,6 +1248,8 @@ static int aic32x4_parse_dt(struct aic32x4_priv *aic32x4,
 	if (of_property_read_u32_array(np, "aic32x4-gpio-func",
 				aic32x4_setup->gpio_func, 5) >= 0)
 		aic32x4->setup = aic32x4_setup;
+
+	aic32x4->ground_centered = of_property_read_bool(np, "ground-centered-mode");
 	return 0;
 }
 
