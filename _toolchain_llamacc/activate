@@ -1,14 +1,17 @@
 #!/bin/bash
+
 _OLDPATH="${_OLDPATH:-$PATH}"
 _OLDPS1="${_OLDPS1:-$PS1}"
 _toolchain_dir="$(dirname $(readlink -f "${BASH_SOURCE[0]}"))"
-export PATH="${_toolchain_dir}:$PATH"
+export PATH="$(dirname $(readlink -f "${BASH_SOURCE[0]}")):$HOME/go/bin:$PATH"
 export ARCH=arm64
 export CROSS_COMPILE=aarch64-linux-gnu-
+export LLAMACC_FUNCTION=gcc-aarch64-linux-gnu
+export LLAMACC_LOCAL_CC=/usr/bin/aarch64-linux-gnu-gcc
+export LLAMACC_LOCAL_CXX=/usr/bin/aarch64-linux-gnu-g++
 export KBUILD_BUILD_TIMESTAMP='ccache'
 
-PS1="${_OLDPS1}\[\033[0m\](ccache arm64) "
-
+PS1="${_OLDPS1}\[\033[0m\](llamacc arm64) "
 
 function deactivate() {
 	export PATH="$_OLDPATH"
