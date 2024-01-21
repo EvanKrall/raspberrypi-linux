@@ -126,6 +126,10 @@
                 clock-names = "bclk";
                 ground-centered-mode;
 
+                // headset-detect-enabled;
+                headset-debounce-ms = <1>;
+                button-debounce-ms = <1>;
+
                 aic32x4-gpio-func = <
                     0xff
                     0xff
