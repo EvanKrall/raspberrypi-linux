@@ -60,6 +60,7 @@ int aic32x4_register_clocks(struct device *dev, const char *mclk_name, const cha
 #define AIC32X4_DACMUTE		AIC32X4_REG(0, 64)
 #define AIC32X4_LDACVOL		AIC32X4_REG(0, 65)
 #define AIC32X4_RDACVOL		AIC32X4_REG(0, 66)
+#define AIC32X4_HSDET		AIC32X4_REG(0, 67)
 #define AIC32X4_ADCSETUP	AIC32X4_REG(0, 81)
 #define	AIC32X4_ADCFGA		AIC32X4_REG(0, 82)
 #define AIC32X4_LADCVOL		AIC32X4_REG(0, 83)
@@ -189,6 +190,15 @@ int aic32x4_register_clocks(struct device *dev, const char *mclk_name, const cha
 
 /* AIC32X4_DACMUTE */
 #define AIC32X4_MUTEON			0x0C
+
+/* AIC32X4_HSDET */
+#define AIC32X4_HSDET_EN                BIT(7)
+#define AIC32X4_HSDET_RESULT_MASK       GENMASK(6, 5)
+#define AIC32X4_HSDET_RESULT_SHIFT      (5)
+#define AIC32X4_HSDET_DEBOUNCE_MASK     GENMASK(4, 2)
+#define AIC32X4_HSDET_DEBOUNCE_SHIFT    (2)
+#define AIC32X4_BUTTON_DEBOUNCE_MASK    GENMASK(1, 0)
+#define AIC32X4_BUTTON_DEBOUNCE_SHIFT   (0)
 
 /* AIC32X4_ADCSETUP */
 #define AIC32X4_LADC_EN			BIT(7)

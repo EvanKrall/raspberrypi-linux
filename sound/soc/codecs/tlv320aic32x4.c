@@ -39,6 +39,8 @@ struct aic32x4_priv {
 	u32 micpga_routing;
 	bool swapdacs;
 	bool ground_centered;
+	bool headset_detect;
+	u8 debounce_cfg;
 	int rstn_gpio;
 	const char *mclk_name;
 	const char *bclk_name;
@@ -1068,6 +1070,12 @@ static int aic32x4_component_probe(struct snd_soc_component *component)
 		tmp_reg |= AIC32X4_GROUND_CENTERED;
 	snd_soc_component_write(component, AIC32X4_HPDRVCFG, tmp_reg);
 
+	tmp_reg = snd_soc_component_read(component, AIC32X4_HSDET);
+	if (aic32x4->headset_detect)
+		tmp_reg |= AIC32X4_HSDET_EN;
+	tmp_reg |= aic32x4->debounce_cfg & (AIC32X4_HSDET_DEBOUNCE_MASK | AIC32X4_BUTTON_DEBOUNCE_MASK);
+	snd_soc_component_write(component, AIC32X4_HSDET, tmp_reg);
+
 	/*
 	 * Enable the fast charging feature and ensure the needed 40ms ellapsed
 	 * before using the analog circuits.
@@ -1222,6 +1230,11 @@ static int aic32x4_parse_dt(struct aic32x4_priv *aic32x4,
 {
 	struct aic32x4_setup_data *aic32x4_setup;
 	int ret;
+	u8 i;
+	u32 headset_debounce_ms;
+	u8 headset_debounce = 0;
+	u32 button_debounce_ms;
+	u8 button_debounce = 0;
 
 	aic32x4_setup = devm_kzalloc(aic32x4->dev, sizeof(*aic32x4_setup),
 							GFP_KERNEL);
@@ -1250,6 +1263,36 @@ static int aic32x4_parse_dt(struct aic32x4_priv *aic32x4,
 		aic32x4->setup = aic32x4_setup;
 
 	aic32x4->ground_centered = of_property_read_bool(np, "ground-centered-mode");
+
+	aic32x4->headset_detect = of_property_read_bool(np, "headset-detect-enabled");
+	if (!(ret = of_property_read_u32(np, "headset-debounce-ms", &headset_debounce_ms))) {
+		headset_debounce = 0;
+		/* below 32 -> 0 (16ms)
+		   32 or higher -> 1 (32ms)
+		   64 or higher -> 2 (64ms)
+		   ...
+		   512 or higher -> 5 (512ms) */
+		for (i = 0; i < 5; i++) {
+			if (headset_debounce_ms >> (i + 5))
+				headset_debounce = i+1;
+		}
+	}
+	if (!(ret = of_property_read_u32(np, "button-debounce-ms", &button_debounce_ms))) {
+		/* below 8 -> 0 (debounce disabled)
+		   8 or higher -> 1 (8ms)
+		   16 or higher -> 2 (16ms)
+		   32 or higher -> 3 (32ms) */
+		for (i = 0; i < 3; i++) {
+			if (button_debounce_ms >> (i + 3))
+				button_debounce = i+1;
+		}
+	}
+	aic32x4->debounce_cfg = (
+		headset_debounce << AIC32X4_HSDET_DEBOUNCE_SHIFT
+	) | (
+		button_debounce << AIC32X4_BUTTON_DEBOUNCE_SHIFT
+	);
+
 	return 0;
 }
 
